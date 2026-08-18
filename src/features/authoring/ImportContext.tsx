@@ -51,12 +51,16 @@ export function assignAsset(
   }
   if (!slotId) return board;
   const slot = mediaSlots.find((s) => s.id === slotId);
+  // Layer media at its slot's position in the template, so a full-bleed
+  // background stays behind the text slots that follow it. Canvas mode
+  // sorts strictly by z and would otherwise paint media on top.
+  const slotZ = slotsOf(board, page.id).findIndex((s) => s.id === slotId);
   const kind: Block['kind'] = asset.kind === 'video' ? 'video' : asset.kind === 'audio' ? 'audio' : 'image';
   const existing = page.blocks.find((b) => b.slotId === slotId);
   const nextBlocks = existing
     ? page.blocks.map((b) =>
         b.id === existing.id
-          ? { ...b, kind, assetId: asset.id, focal: { x: 0.5, y: 0.5 }, kenBurns: kind === 'image' ? (b.kenBurns ?? defaultKenBurns()) : undefined }
+          ? { ...b, kind, assetId: asset.id, z: slotZ >= 0 ? slotZ : b.z, focal: { x: 0.5, y: 0.5 }, kenBurns: kind === 'image' ? (b.kenBurns ?? defaultKenBurns()) : undefined }
           : b,
       )
     : [
@@ -67,7 +71,7 @@ export function assignAsset(
           slotId,
           assetId: asset.id,
           rect: slot ? { ...slot.rect } : { x: 96, y: 300, w: 600, h: 400, rot: 0 },
-          z: Math.max(0, ...page.blocks.map((b) => b.z)) + 1,
+          z: slotZ >= 0 ? slotZ : Math.max(0, ...page.blocks.map((b) => b.z)) + 1,
           focal: { x: 0.5, y: 0.5 },
           kenBurns: kind === 'image' ? defaultKenBurns() : undefined,
         },
