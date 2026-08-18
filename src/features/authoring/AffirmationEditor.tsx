@@ -201,13 +201,18 @@ function AffirmationRow({
         onChange={(ev) => onCheck(ev.target.checked)}
         className="h-4 w-4 accent-[var(--tc-primary)]"
       />
-      <input
-        type="checkbox"
-        checked={affirmation.active}
+      <button
+        type="button"
         title={e.affirmationActive}
-        onChange={(ev) => onPatch({ active: ev.target.checked })}
-        className="h-4 w-4 accent-[var(--tc-secondary)]"
-      />
+        onClick={() => onPatch({ active: !affirmation.active })}
+        className={`shrink-0 rounded-full px-2 py-0.5 font-body text-[10px] ${
+          affirmation.active
+            ? 'bg-primary/80 text-background'
+            : 'border border-text-muted/40 text-text-muted'
+        }`}
+      >
+        {e.affirmationActive}
+      </button>
       <button
         type="button"
         className="h-12 w-12 shrink-0 overflow-hidden rounded border border-dashed border-text-muted/40 bg-background"

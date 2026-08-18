@@ -3,7 +3,8 @@ import { CANVAS_H, CANVAS_W, type Block, type Board } from '../../domain/types';
 import type { Screen } from './screens';
 import { PageView } from '../authoring/PageView';
 import { MediaContent } from '../authoring/MediaContent';
-import { TextFlowView } from './TextFlowView';
+import { TextFlowView, TextFlowContent } from './TextFlowView';
+import { Teleprompter } from './Teleprompter';
 import { FormattedText } from '../authoring/FormattedText';
 
 // One playback screen. Fixed-canvas pages scale to fit with the ambient
@@ -71,9 +72,32 @@ function FullBleedMedia({ block }: { block: Block }) {
   );
 }
 
-export function ScreenView({ board, screen }: { board: Board; screen: Screen }) {
+export function ScreenView({
+  board,
+  screen,
+  paused = false,
+  onRollEnd,
+}: {
+  board: Board;
+  screen: Screen;
+  paused?: boolean;
+  onRollEnd?: () => void;
+}) {
   if (screen.kind === 'page') {
     if (screen.textFlow) {
+      const bg = screen.page.blocks.find((b) => b.slotId === 'background' && b.assetId);
+      if (screen.page.textRoll) {
+        return (
+          <div className="relative h-full w-full overflow-hidden">
+            <Backdrop screen={screen} />
+            {bg && <FullBleedMedia block={bg} />}
+            {bg && <div className="absolute inset-0 bg-black/45" />}
+            <Teleprompter speed={screen.page.rollSpeed} paused={paused} onEnd={onRollEnd}>
+              <TextFlowContent page={screen.page} />
+            </Teleprompter>
+          </div>
+        );
+      }
       return (
         <div className="relative h-full w-full">
           <Backdrop screen={screen} />
@@ -135,17 +159,13 @@ export function ScreenView({ board, screen }: { board: Board; screen: Screen }) 
 
   if (screen.kind === 'affirmation-roll') {
     const introBg = screen.introPage?.blocks.find((b) => b.slotId === 'background' && b.assetId);
-    // Roughly six seconds of screen time per affirmation.
-    const durationMs = Math.max(20000, screen.list.length * 6000);
     return (
       <div className="relative h-full w-full overflow-hidden">
         <Backdrop screen={screen} />
         {introBg && <FullBleedMedia block={introBg} />}
         {introBg && <div className="absolute inset-0 bg-black/40" />}
-        <div
-          className="teleprompter absolute inset-x-0 flex flex-col items-center gap-14 px-8 text-center"
-          style={{ animationDuration: `${durationMs}ms` }}
-        >
+        <Teleprompter speed={screen.page.rollSpeed} paused={paused} onEnd={onRollEnd}>
+          <div className="flex flex-col items-center gap-14">
           {screen.list.map((a) => (
             <div key={a.id} className="flex flex-col items-center gap-2">
               <p
@@ -159,7 +179,8 @@ export function ScreenView({ board, screen }: { board: Board; screen: Screen }) 
               )}
             </div>
           ))}
-        </div>
+          </div>
+        </Teleprompter>
       </div>
     );
   }

@@ -105,7 +105,12 @@
     "deleteSelected": "Delete selected",
     "deleteSelectedConfirm": "Delete the selected affirmations?",
     "affirmationRoll": "Roll like a teleprompter",
-    "affirmationRollHint": "In playback the affirmations scroll continuously on one screen instead of one per screen."
+    "affirmationRollHint": "In playback the affirmations scroll continuously on one screen instead of one per screen.",
+    "textRoll": "Roll like a teleprompter",
+    "rollSpeedLabel": "Roll speed",
+    "rollSlow": "Slow",
+    "rollNormal": "Normal",
+    "rollFast": "Fast"
   },
   "import": {
     "dropHere": "Drop images or video here",

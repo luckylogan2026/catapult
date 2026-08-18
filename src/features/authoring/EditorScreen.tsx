@@ -258,6 +258,33 @@ function EditorInner() {
                     {e.affirmationRoll}
                   </label>
                 )}
+                {def.textFlow && def.authoring === undefined && (
+                  <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
+                    <input
+                      type="checkbox"
+                      checked={page.textRoll ?? false}
+                      onChange={(ev) => mutate((b) => updatePage(b, page.id, { textRoll: ev.target.checked }))}
+                      className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+                    />
+                    {e.textRoll}
+                  </label>
+                )}
+                {(page.textRoll || page.affirmationDisplay === 'roll') && (
+                  <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
+                    {e.rollSpeedLabel}
+                    <select
+                      value={page.rollSpeed ?? 'normal'}
+                      onChange={(ev) =>
+                        mutate((b) => updatePage(b, page.id, { rollSpeed: ev.target.value as 'slow' | 'normal' | 'fast' }))
+                      }
+                      className="rounded border border-text-muted/30 bg-background px-1 py-0.5 font-body text-xs text-text"
+                    >
+                      <option value="slow">{e.rollSlow}</option>
+                      <option value="normal">{e.rollNormal}</option>
+                      <option value="fast">{e.rollFast}</option>
+                    </select>
+                  </label>
+                )}
                 {def.cellExpansion && (
                   <label
                     title={e.expandCellsHint}

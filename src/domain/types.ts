@@ -113,6 +113,10 @@ export type Page = {
   /** Affirmations pages: one screen per affirmation, or a continuous
    * teleprompter roll on a single screen. */
   affirmationDisplay?: 'screens' | 'roll';
+  /** Text pages: roll the content like a teleprompter during playback. */
+  textRoll?: boolean;
+  /** Teleprompter pace for this page. Defaults to normal. */
+  rollSpeed?: 'slow' | 'normal' | 'fast';
   /** Computed ambient letterbox fill, cached. Recomputed when media changes. */
   backdrop?: { color: string; blurDataUri: string };
 };

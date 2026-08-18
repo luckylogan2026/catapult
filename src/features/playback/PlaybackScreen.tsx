@@ -108,13 +108,12 @@ export function PlaybackScreen({
 
   // Dwell timer with the hairline progress at the very bottom edge.
   const autoAdvance = playlist?.autoAdvance ?? false;
-  const baseDwellMs = ((current?.page.dwellSeconds ?? playlist?.dwellSeconds ?? 6) * 1000) || 6000;
-  const dwellMs =
-    current?.kind === 'affirmation-roll'
-      ? Math.max(20000, current.list.length * 6000) + 800
-      : baseDwellMs;
+  const dwellMs = ((current?.page.dwellSeconds ?? playlist?.dwellSeconds ?? 6) * 1000) || 6000;
+  const isRoll =
+    current?.kind === 'affirmation-roll' ||
+    (current?.kind === 'page' && current.textFlow && !!current.page.textRoll);
   useEffect(() => {
-    if (!autoAdvance || paused || !screens || index >= count - 1) return;
+    if (!autoAdvance || paused || !screens || index >= count - 1 || isRoll) return;
     let raf = 0;
     const start = performance.now();
     const tick = (t: number) => {
@@ -128,7 +127,7 @@ export function PlaybackScreen({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [autoAdvance, paused, index, dwellMs, advance, screens, count]);
+  }, [autoAdvance, paused, index, dwellMs, advance, screens, count, isRoll]);
 
   // Keyboard: arrows, space, escape.
   useEffect(() => {
@@ -270,7 +269,12 @@ export function PlaybackScreen({
             };
         return (
           <div key={screenKey(s)} className="absolute inset-0 overflow-hidden" style={style}>
-            <ScreenView board={board} screen={s} />
+            <ScreenView
+              board={board}
+              screen={s}
+              paused={i !== index || paused}
+              onRollEnd={i === index && autoAdvance && !paused ? () => advance() : undefined}
+            />
           </div>
         );
       })}

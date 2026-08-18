@@ -84,7 +84,7 @@ body {
 /* Teleprompter roll for affirmations: enters from below, exits above,
    at a pace set inline from the number of entries. */
 @keyframes teleprompter-roll {
-  from { transform: translateY(100vh); }
+  from { transform: translateY(50vh); }
   to { transform: translateY(-100%); }
 }
 .teleprompter {
