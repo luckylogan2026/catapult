@@ -6,7 +6,7 @@ import { MediaContent } from '../authoring/MediaContent';
 import { TextFlowView, TextFlowContent } from './TextFlowView';
 import { Teleprompter } from './Teleprompter';
 import { VisionFillView } from './VisionFillView';
-import { getPageTypeDef } from '../../pageTypes/registry';
+import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
 import { FormattedText } from '../authoring/FormattedText';
 
 // One playback screen. Fixed-canvas pages scale to fit with the ambient
@@ -112,6 +112,41 @@ export function ScreenView({
     // Vision pages fill the viewport with their pictures instead of
     // letterboxing the canvas.
     const def = getPageTypeDef(screen.page.type);
+    const template = getTemplate(def, screen.page.templateId);
+    const bgSlot = template.slots.find((s) => s.id === 'background' && s.kind === 'media');
+    const bgBlock = bgSlot
+      ? screen.page.blocks.find((b) => b.slotId === 'background' && b.assetId)
+      : undefined;
+    if (bgBlock) {
+      const slotOrder = new Map(template.slots.map((s, i) => [s.id, i]));
+      const texts = screen.page.blocks
+        .filter((b) => b.kind === 'text' && (b.text ?? '').trim())
+        .sort((a, b) => (slotOrder.get(a.slotId ?? '') ?? 99) - (slotOrder.get(b.slotId ?? '') ?? 99));
+      return (
+        <div className="relative h-full w-full bg-black">
+          <FullBleedMedia block={bgBlock} />
+          <div className="absolute inset-0 bg-black/25" />
+          <div className="relative flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center">
+            {texts.map((b) => {
+              const isTitle = b.slotId === 'title';
+              return (
+                <p
+                  key={b.id}
+                  className={isTitle ? 'font-heading font-bold text-white' : 'font-body text-white/90'}
+                  style={{
+                    fontSize: isTitle ? 'clamp(30px, 9vw, 76px)' : 'clamp(15px, 4vw, 28px)',
+                    lineHeight: 1.2,
+                    textShadow: '0 2px 16px rgba(0,0,0,0.7)',
+                  }}
+                >
+                  {b.text}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
     if (def.cellExpansion) {
       const cells = screen.page.blocks
         .filter((b) => b.slotId?.startsWith('cell-') && b.assetId)

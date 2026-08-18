@@ -114,7 +114,7 @@ function EditorInner() {
         <span className="font-body text-xs text-text-muted">
           {saveState === 'saving' ? strings.common.saving : saveState === 'saved' ? strings.common.saved : ''}
         </span>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
           <TopButton label={strings.common.undo} disabled={!canUndo} onClick={undo} />
           <TopButton label={strings.common.redo} disabled={!canRedo} onClick={redo} />
           <TopButton label={e.outputOrder} onClick={() => setView('order')} />
