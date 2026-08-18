@@ -87,19 +87,19 @@ export function CompletionScreen({
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-background px-8 text-center">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 overflow-y-auto bg-background px-6 py-8 text-center">
       <p className="font-body text-sm uppercase tracking-[0.3em] text-text-muted">{c.title}</p>
-      <p className="font-heading text-7xl font-semibold text-primary">{overall}</p>
+      <p className="font-heading text-6xl font-semibold text-primary">{overall}</p>
       <p className="font-body text-sm text-text-muted">
         {c.streakLabel} · {c.morningShort} {morning} · {c.eveningShort} {evening}
       </p>
 
-      <div className="relative w-full max-w-lg">
+      <div className="relative w-full max-w-2xl">
         <textarea
           value={note}
           onChange={(ev) => setNote(ev.target.value)}
           placeholder={c.notePlaceholder}
-          rows={6}
+          rows={10}
           className="w-full resize-y rounded border border-text-muted/30 bg-surface/60 p-3 pb-10 text-left font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
         />
         {canDictate && (
@@ -120,7 +120,7 @@ export function CompletionScreen({
       <button
         type="button"
         onClick={finish}
-        className="mt-2 w-full max-w-lg rounded bg-primary px-8 py-3 font-body text-base font-medium text-background"
+        className="mt-2 w-full max-w-2xl rounded bg-primary px-8 py-3 font-body text-base font-medium text-background"
       >
         {c.finish}
       </button>
