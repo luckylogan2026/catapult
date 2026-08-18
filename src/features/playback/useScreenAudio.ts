@@ -110,7 +110,10 @@ export function useScreenAudio(
         currentOwner.current = null;
       }
       // No recording: text to speech when the playlist asks for it.
-      const tts = playlist?.ttsEnabled ? ttsTextFor(screen) : null;
+      // Owner decision: speech stays silent while the playlist carries
+      // background music; recordings still play and duck the music.
+      const tts =
+        playlist?.ttsEnabled && !playlist?.backgroundTrackAssetId ? ttsTextFor(screen) : null;
       if (tts) {
         ttsRef.current = speakText(tts.text, {
           voiceURI: board.settings.ttsVoiceURI,
