@@ -117,10 +117,17 @@ function EditorInner() {
           <TopButton label={strings.common.redo} disabled={!canRedo} onClick={redo} />
           <TopButton label={e.outputOrder} onClick={() => setView('order')} />
           <TopButton label={e.settings} onClick={() => setSettingsOpen(true)} />
+          <button
+            type="button"
+            className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text-muted hover:text-text"
+            onClick={() => setAddOpen(true)}
+          >
+            {e.addPage}
+          </button>
           <div className="relative">
             <button
               type="button"
-              className="rounded border border-primary px-3 py-1.5 font-body text-sm font-medium text-primary hover:bg-primary hover:text-background"
+              className="rounded bg-primary px-3 py-1.5 font-body text-sm font-medium text-background hover:opacity-90"
               onClick={() => setPreviewOpen((v) => !v)}
             >
               {strings.playback.preview}
@@ -146,13 +153,6 @@ function EditorInner() {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            className="rounded bg-primary px-3 py-1.5 font-body text-sm font-medium text-background"
-            onClick={() => setAddOpen(true)}
-          >
-            {e.addPage}
-          </button>
         </div>
       </header>
 
