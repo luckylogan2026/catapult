@@ -26,13 +26,13 @@ export function MediaContent({
         loop
         autoPlay
         playsInline
-        className="h-full w-full object-cover"
+        className={block.fit === 'contain' ? 'h-full w-full object-contain' : 'h-full w-full object-cover'}
         style={{ objectPosition }}
       />
     );
   }
   const src = asset.kind === 'video' ? (poster.url ?? url) : url;
   return (
-    <img src={src} alt="" draggable={false} className="h-full w-full object-cover" style={{ objectPosition }} />
+    <img src={src} alt="" draggable={false} className={block.fit === 'contain' ? 'h-full w-full object-contain' : 'h-full w-full object-cover'} style={{ objectPosition }} />
   );
 }

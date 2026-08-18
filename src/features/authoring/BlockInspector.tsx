@@ -82,6 +82,20 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
       {(block.kind === 'image' || block.kind === 'video') && block.assetId && (
         <>
           <FocalPicker block={block} onChange={(focal) => patch({ focal })} />
+          <div className="flex overflow-hidden rounded border border-text-muted/30">
+            {(['cover', 'contain'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => patch({ fit: f })}
+                className={`px-2 py-0.5 font-body text-xs ${
+                  (block.fit ?? 'cover') === f ? 'bg-primary text-background' : 'text-text-muted'
+                }`}
+              >
+                {f === 'cover' ? e.fitFill : e.fitContain}
+              </button>
+            ))}
+          </div>
           {block.kind === 'image' && (
             <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
               <input

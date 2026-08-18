@@ -90,7 +90,9 @@
     "backgroundLabel": "Background",
     "bulletList": "Bullets",
     "numberList": "Numbers",
-    "dragToReposition": "Drag the picture to position it in its frame."
+    "dragToReposition": "Drag the picture to position it in its frame.",
+    "fitFill": "Fill",
+    "fitContain": "Fit"
   },
   "import": {
     "dropHere": "Drop images or video here",

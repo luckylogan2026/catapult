@@ -65,6 +65,8 @@ export type Block = {
   };
   /** Cover-fit focal point, 0..1 in each axis. Defaults to center. */
   focal?: { x: number; y: number };
+  /** How media meets its frame: fill and crop, or shrink to fit whole. */
+  fit?: 'cover' | 'contain';
   kenBurns?: { enabled: boolean; from: Rect; to: Rect; durationMs: number };
   chapter?: {
     status: ChapterStatus;
