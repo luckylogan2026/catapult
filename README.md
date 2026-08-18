@@ -1,32 +1,24 @@
-# React + TypeScript + Vite
+# Catapult
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A personal transformation board. An authoring tool and a playback tool in one: build a board of pages holding images, video, text, and audio on the desktop, then swipe through it on a phone every morning and every night. Installable PWA, fully offline, no accounts, no telemetry.
 
-Currently, two official plugins are available:
+The product name, palette, and fonts live in `config/brand.json`. All UI copy lives in `config/strings.json`. Nothing user-facing is hardcoded in source, because client copies of this app may ship under a different name.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Development
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+npm install
+npm run dev       # dev server
+npm run build     # production build to dist/
+npm run preview   # serve the production build locally
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Deployment
+
+Pushes to `main` deploy to GitHub Pages through `.github/workflows/deploy.yml`. The Vite base path is set by the workflow: repo subpath by default, site root when `public/CNAME` exists. To serve a copy from a custom domain, add the domain to `public/CNAME` and configure it in the repo's Pages settings.
+
+One rule from the build brief worth repeating: never leave a `filename.html` in the repo root alongside a `filename/index.html` folder, because GitHub Pages serves the root file and silently ignores the folder.
+
+## Project documents
+
+The build brief lives outside this repo at `Documents/Project Sunshine/Catapult_ClaudeCode_Handoff.md`. Work proceeds in phases; each phase ends with a report and waits for approval.
