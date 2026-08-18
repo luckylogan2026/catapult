@@ -1,4 +1,4 @@
-import { strings } from '../../config';
+import { brand, strings } from '../../config';
 import type { Block, Board, ChapterStatus, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { removeBlock, removeItemBlock, updateBlock, addPage, createPage } from './boardOps';
@@ -113,7 +113,7 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
                 }
                 className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
               />
-              Ken Burns
+              {e.kenBurnsLabel}
             </label>
           )}
           <button
@@ -216,7 +216,7 @@ function ColorControl({ block, onPatch }: { block: Block; onPatch: (p: Partial<B
       ))}
       <input
         type="color"
-        value={/^#[0-9a-fA-F]{6}$/.test(current ?? '') ? (current as string) : '#d4a853'}
+        value={/^#[0-9a-fA-F]{6}$/.test(current ?? '') ? (current as string) : brand.palette.primary}
         onChange={(ev) => onPatch({ style: { ...block.style, color: ev.target.value } })}
         className="h-5 w-6 cursor-pointer rounded border border-text-muted/40 bg-transparent p-0"
         title={e.textColorLabel}

@@ -110,7 +110,8 @@
     "rollFast": "Fast",
     "recordStart": "Record",
     "recordStop": "Stop",
-    "recordError": "Microphone access was refused."
+    "recordError": "Microphone access was refused.",
+    "kenBurnsLabel": "Slow motion drift"
   },
   "import": {
     "dropHere": "Drop images or video here",

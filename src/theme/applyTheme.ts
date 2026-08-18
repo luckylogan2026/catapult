@@ -27,12 +27,20 @@ export function applyBrandDefaultTheme(): void {
   applyTheme({ ...preset.colors, ...brand.palette }, { ...preset.fonts, ...brand.fonts });
 }
 
-// Applies a board's theme: its preset with any editor overrides on top.
+// Applies a board's theme: preset colors, then the brand palette when
+// the board sits on the brand's default preset (the palette is the
+// brand's tuned version of that preset), then any editor overrides.
+// A deliberately chosen different preset stays untouched by the brand.
 export function applyBoardTheme(theme: {
   presetId: string;
   colors?: Partial<ThemeColors>;
   fonts?: Partial<ThemeFonts>;
 }): void {
   const preset = getPreset(theme.presetId);
-  applyTheme({ ...preset.colors, ...theme.colors }, { ...preset.fonts, ...theme.fonts });
+  const brandLayer = theme.presetId === brand.defaultThemePreset ? brand.palette : {};
+  const brandFonts = theme.presetId === brand.defaultThemePreset ? brand.fonts : {};
+  applyTheme(
+    { ...preset.colors, ...brandLayer, ...theme.colors },
+    { ...preset.fonts, ...brandFonts, ...theme.fonts },
+  );
 }

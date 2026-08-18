@@ -3,6 +3,7 @@ import { kvGet, kvSet } from '../../db/kv';
 import type { Board } from '../../domain/types';
 import { referencedAssetIds } from '../exports/visionBundle';
 import syncConfig from '../../../config/sync.json';
+import brand from '../../../config/brand.json';
 
 // The Google Drive adapter. Auth is the Google Identity Services token
 // client with the drive.file scope only: the app can touch nothing in
@@ -19,7 +20,7 @@ import syncConfig from '../../../config/sync.json';
 // by default and useless without the owner's explicit connect.
 
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
-const FOLDER_NAME = 'Catapult Board';
+const FOLDER_NAME = `${brand.appName} Board`;
 const API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 

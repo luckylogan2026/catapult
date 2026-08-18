@@ -10,6 +10,7 @@ import { ImportProvider } from '../authoring/ImportContext';
 import { slotsOfPage } from '../authoring/boardOps';
 import { TextFlowContent } from '../playback/TextFlowView';
 import { PdfModeContext } from './pdfMode';
+import { brand } from '../../config';
 
 // PDF export: each included page rasterizes at 2x through html-to-image
 // and lands on a US Letter portrait page. The 1275 x 1650 canvas maps
@@ -130,7 +131,7 @@ async function renderPagePngs(
       canvas.width = CANVAS_W * 2;
       canvas.height = chunkPx;
       const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--tc-background') || '#112B12';
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--tc-background') || brand.palette.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, -y);
       out.push(canvas.toDataURL('image/png'));
