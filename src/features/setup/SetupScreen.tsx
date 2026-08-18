@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { brand, strings } from '../../config';
 import { themePresets } from '../../theme/presets';
 import { applyBoardTheme } from '../../theme/applyTheme';
@@ -15,6 +15,27 @@ export function SetupScreen() {
   const [presetId, setPresetId] = useState(brand.defaultThemePreset);
   const [mode, setMode] = useState<'template' | 'empty'>('template');
   const [busy, setBusy] = useState(false);
+  const [restoreNotice, setRestoreNotice] = useState<string | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+
+  // A fresh device restores a backup from right here, before any board
+  // exists. This is how a board travels from desktop to phone.
+  const restore = async (file: File) => {
+    setBusy(true);
+    setRestoreNotice(null);
+    try {
+      const { importVisionBundle } = await import('../exports/visionBundle');
+      const result = await importVisionBundle(file);
+      if (!result.ok) {
+        setRestoreNotice(result.reason);
+        return;
+      }
+      await adoptBoard(result.board);
+      applyBoardTheme(result.board.theme);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const begin = async () => {
     if (busy) return;
@@ -117,6 +138,27 @@ export function SetupScreen() {
         >
           {s.begin}
         </button>
+
+        <button
+          type="button"
+          disabled={busy}
+          className="mt-3 w-full rounded-md border border-text-muted/30 px-4 py-2.5 font-body text-sm text-text-muted hover:text-text disabled:opacity-60"
+          onClick={() => importRef.current?.click()}
+        >
+          {strings.settings.importBackup}
+        </button>
+        {restoreNotice && <p className="mt-2 font-body text-xs text-secondary">{restoreNotice}</p>}
+        <input
+          ref={importRef}
+          type="file"
+          accept=".vision,application/octet-stream,application/zip"
+          hidden
+          onChange={(ev) => {
+            const f = ev.target.files?.[0];
+            ev.target.value = '';
+            if (f) void restore(f);
+          }}
+        />
       </div>
     </main>
   );

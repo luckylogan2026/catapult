@@ -290,14 +290,23 @@
   "settings": {
     "title": "Settings",
     "autosaveNote": "Every change saves automatically on this device. There is no save button to press.",
-    "backupNote": "Backup to a file and restore arrive with exports in a later phase.",
     "storageUsage": "Storage used",
     "storagePersistent": "Protected from cleanup",
     "storageNotPersistent": "Not yet protected from cleanup",
     "archiveOriginals": "Keep full resolution originals when photos are downscaled",
     "startOver": "Start over",
     "startOverWarning": "This deletes the whole board and all imported media from this device, then returns to the welcome screen. This cannot be undone.",
-    "startOverConfirm": "Delete everything and start over?"
+    "startOverConfirm": "Delete everything and start over?",
+    "backupTitle": "Backup",
+    "backupBody": "Save the whole board, media included, as one file. Open that file on another device to bring the board there.",
+    "exportBackup": "Save backup file",
+    "importBackup": "Load backup file",
+    "importConfirmReplace": "Loading this backup replaces the board on this device. Continue?",
+    "importInvalid": "That file is not a readable backup.",
+    "importNewer": "This backup was made by a newer version of the app. Update the app first, then load it again.",
+    "importDone": "Backup loaded.",
+    "exporting": "Preparing the backup file",
+    "importing": "Loading the backup"
   },
   "playback": {
     "preview": "Preview",

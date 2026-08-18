@@ -240,19 +240,11 @@ function AffirmationRow({
           onChange={(ev) => onPatch({ text: ev.target.value })}
           className="w-full bg-transparent font-body text-text outline-none placeholder:text-text-muted/50"
         />
-        <div className="flex items-center gap-2">
-          <input
-            value={affirmation.emotionTag ?? ''}
-            placeholder={e.affirmationEmotionLabel}
-            onChange={(ev) => onPatch({ emotionTag: ev.target.value })}
-            className="w-40 bg-transparent font-body text-xs text-text-muted outline-none placeholder:text-text-muted/40"
-          />
-          {affirmation.example && (
-            <span className="rounded bg-text-muted/20 px-1.5 font-body text-[10px] text-text-muted">
-              {strings.editor.affirmationExampleTag}
-            </span>
-          )}
-        </div>
+        {affirmation.example && (
+          <span className="rounded bg-text-muted/20 px-1.5 font-body text-[10px] text-text-muted">
+            {strings.editor.affirmationExampleTag}
+          </span>
+        )}
       </div>
       <button
         type="button"

@@ -149,9 +149,6 @@ export function ScreenView({
           >
             {a.text}
           </p>
-          {a.emotionTag?.trim() && (
-            <p className="font-body text-sm uppercase tracking-[0.25em] text-white/70">{a.emotionTag}</p>
-          )}
         </div>
       </div>
     );
@@ -174,9 +171,6 @@ export function ScreenView({
               >
                 {a.text}
               </p>
-              {a.emotionTag?.trim() && (
-                <p className="font-body text-xs uppercase tracking-[0.25em] text-white/60">{a.emotionTag}</p>
-              )}
             </div>
           ))}
           </div>
