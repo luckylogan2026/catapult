@@ -281,6 +281,44 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               <label className="flex items-center gap-1 text-xs text-text-muted">
                 <input
                   type="checkbox"
+                  checked={pl.autoAdvance}
+                  onChange={(ev) =>
+                    mutate((b) => ({
+                      ...b,
+                      playlists: b.playlists.map((x) =>
+                        x.id === pl.id ? { ...x, autoAdvance: ev.target.checked } : x,
+                      ),
+                    }))
+                  }
+                  className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+                />
+                {s.autoAdvanceLabel}
+              </label>
+              {pl.autoAdvance && (
+                <label className="flex items-center gap-1 text-xs text-text-muted">
+                  {s.dwellLabel}
+                  <input
+                    type="number"
+                    min={2}
+                    max={120}
+                    value={pl.dwellSeconds}
+                    onChange={(ev) =>
+                      mutate((b) => ({
+                        ...b,
+                        playlists: b.playlists.map((x) =>
+                          x.id === pl.id
+                            ? { ...x, dwellSeconds: Math.max(2, Number(ev.target.value) || 6) }
+                            : x,
+                        ),
+                      }))
+                    }
+                    className="w-14 rounded border border-text-muted/30 bg-background px-1 py-0.5 text-text"
+                  />
+                </label>
+              )}
+              <label className="flex items-center gap-1 text-xs text-text-muted">
+                <input
+                  type="checkbox"
                   checked={pl.ttsEnabled}
                   onChange={(ev) =>
                     mutate((b) => ({
@@ -356,7 +394,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               />
             </label>
           </div>
-          <p className="mt-2 font-body text-[11px] text-text-muted">{s.ttsDeviceNote}</p>
+          <p className="mt-2 font-body text-[11px] text-text-muted">{s.autoAdvanceHint}</p>
+          <p className="mt-1 font-body text-[11px] text-text-muted">{s.ttsDeviceNote}</p>
           <input
             ref={trackRef}
             type="file"

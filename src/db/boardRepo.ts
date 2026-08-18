@@ -28,7 +28,7 @@ function defaultPlaylist(id: Playlist['id'], name: string): Playlist {
     pageOrder: [],
     affirmationMode: 'shuffle',
     shuffleCount: 8,
-    autoAdvance: true,
+    autoAdvance: false,
     dwellSeconds: 6,
     ttsEnabled: false,
   };

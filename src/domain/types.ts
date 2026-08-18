@@ -255,4 +255,4 @@ export type Board = {
   streak: StreakRecord;
 };
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;

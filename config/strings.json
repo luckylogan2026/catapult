@@ -317,7 +317,10 @@
     "ttsLabel": "Speak affirmations aloud",
     "ttsVoiceLabel": "Voice",
     "ttsRateLabel": "Speaking rate",
-    "ttsDeviceNote": "Available voices depend on this device. Some Android voices need a one-time download in system settings before they work offline."
+    "ttsDeviceNote": "Available voices depend on this device. Some Android voices need a one-time download in system settings before they work offline.",
+    "autoAdvanceLabel": "Advance automatically",
+    "dwellLabel": "Seconds per page",
+    "autoAdvanceHint": "Off means pages wait for your swipe. On, each page holds for its audio to finish, then the timer runs."
   },
   "playback": {
     "preview": "Play",

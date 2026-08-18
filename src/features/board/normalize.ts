@@ -1,5 +1,6 @@
 import type { Block, Board } from '../../domain/types';
 import { getPageTypeDef, getTemplate, slotPrompt } from '../../pageTypes/registry';
+import { SCHEMA_VERSION } from '../../domain/types';
 import { strings } from '../../config';
 
 // Template definitions evolve between app versions. This makes an
@@ -13,6 +14,16 @@ const RETIRED_TYPES = new Set(['master-affirmations']);
 
 export function ensureTemplateBlocks(board: Board): Board {
   let changed = false;
+  // Schema 2: playback advances on swipe by default. Boards from before
+  // that decision carried auto-advance on without ever being asked.
+  if (board.schemaVersion < 2) {
+    board = {
+      ...board,
+      schemaVersion: SCHEMA_VERSION,
+      playlists: board.playlists.map((pl) => ({ ...pl, autoAdvance: false })),
+    };
+    changed = true;
+  }
   const kept = board.pages.filter((p) => !RETIRED_TYPES.has(p.type));
   if (kept.length !== board.pages.length) changed = true;
   const pages = kept.map((page) => {

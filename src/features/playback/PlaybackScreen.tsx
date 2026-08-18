@@ -84,12 +84,20 @@ export function PlaybackScreen({
   const count = screens?.length ?? 0;
   const current = screens?.[index];
   const { setDucked } = useSessionAudio(playlist);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const onForeground = useCallback(
+    (a: boolean) => {
+      setDucked(a);
+      setVoiceActive(a);
+    },
+    [setDucked],
+  );
   const { pendingTap, startPending, stop } = useScreenAudio(
     board!,
     playlist,
     current,
     !!screens,
-    setDucked,
+    onForeground,
   );
 
   const goTo = useCallback(
@@ -121,7 +129,9 @@ export function PlaybackScreen({
     current?.kind === 'affirmation-roll' ||
     (current?.kind === 'page' && current.textFlow && !!current.page.textRoll);
   useEffect(() => {
-    if (!autoAdvance || paused || !screens || index >= count - 1 || isRoll) return;
+    // Audio owns the page: the countdown starts only after the voice or
+    // narration finishes. Looping audio holds the page for a swipe.
+    if (!autoAdvance || paused || !screens || index >= count - 1 || isRoll || voiceActive) return;
     let raf = 0;
     const start = performance.now();
     const tick = (t: number) => {
@@ -135,7 +145,7 @@ export function PlaybackScreen({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [autoAdvance, paused, index, dwellMs, advance, screens, count, isRoll]);
+  }, [autoAdvance, paused, index, dwellMs, advance, screens, count, isRoll, voiceActive]);
 
   // Keyboard: arrows, space, escape.
   useEffect(() => {
