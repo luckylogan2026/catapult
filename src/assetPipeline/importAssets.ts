@@ -117,7 +117,9 @@ export async function importUrl(
   const blob = await res.blob();
   // A page link (YouTube, a news article) yields HTML, not media. Tell
   // the user what happened instead of a generic failure.
-  if (/^(text/|application/xhtml)/.test(blob.type)) throw new Error('url-is-page');
+  if (blob.type.startsWith('text/') || blob.type.startsWith('application/xhtml')) {
+    throw new Error('url-is-page');
+  }
   const filename = new URL(url).pathname.split('/').pop() ?? '';
   return importBlob(blob, { filename, archiveOriginals: opts.archiveOriginals });
 }
