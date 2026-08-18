@@ -18,8 +18,6 @@ type Source = { assetId: string; loop: boolean } | null;
 
 function ownerOf(screen: Screen): string {
   if (screen.kind === 'master') return `${screen.page.id}:${screen.entry.id}`;
-  if (screen.kind === 'affirmation' || screen.kind === 'affirmation-roll')
-    return screen.introPage?.id ?? screen.page.id;
   return screen.page.id;
 }
 
@@ -31,10 +29,9 @@ function sourceForScreen(screen: Screen | undefined): { src: Source; tap: boolea
   if (screen.kind === 'affirmation' && screen.affirmation.audioAssetId) {
     return { src: { assetId: screen.affirmation.audioAssetId, loop: false }, tap: false };
   }
-  const page =
-    screen.kind === 'affirmation' || screen.kind === 'affirmation-roll'
-      ? (screen.introPage ?? screen.page)
-      : screen.page;
+  // The intro's audio does not carry into the affirmation screens; its
+  // background image does, but sound stops when its page is left.
+  const page = screen.page;
   if (page.narrationAssetId) {
     return {
       src: { assetId: page.narrationAssetId, loop: page.audioLoop ?? false },

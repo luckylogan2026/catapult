@@ -94,13 +94,13 @@ export function CompletionScreen({
         {c.streakLabel} · {c.morningShort} {morning} · {c.eveningShort} {evening}
       </p>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         <textarea
           value={note}
           onChange={(ev) => setNote(ev.target.value)}
           placeholder={c.notePlaceholder}
-          rows={2}
-          className="w-full resize-none rounded border border-text-muted/30 bg-surface/60 p-3 text-center font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
+          rows={6}
+          className="w-full resize-y rounded border border-text-muted/30 bg-surface/60 p-3 text-center font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
         />
         {canDictate && (
           <button
