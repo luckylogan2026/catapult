@@ -13,12 +13,26 @@ import type { Screen } from './screens';
 
 type Source = { assetId: string; loop: boolean } | null;
 
+// The owner scopes a track: audio started for a page keeps playing only
+// while screens of that owner are active (the intro track spans the
+// affirmation screens it introduces), and stops as soon as an unrelated
+// screen arrives.
+function ownerOf(screen: Screen): string {
+  if (screen.kind === 'master') return `${screen.page.id}:${screen.entry.id}`;
+  if (screen.kind === 'affirmation' || screen.kind === 'affirmation-roll')
+    return screen.introPage?.id ?? screen.page.id;
+  return screen.page.id;
+}
+
 function sourceForScreen(screen: Screen | undefined): { src: Source; tap: boolean; page?: Page } {
   if (!screen) return { src: null, tap: false };
   if (screen.kind === 'master' && screen.entry.audioAssetId) {
     return { src: { assetId: screen.entry.audioAssetId, loop: false }, tap: false };
   }
-  const page = screen.kind === 'affirmation' ? (screen.introPage ?? screen.page) : screen.page;
+  const page =
+    screen.kind === 'affirmation' || screen.kind === 'affirmation-roll'
+      ? (screen.introPage ?? screen.page)
+      : screen.page;
   if (page.narrationAssetId) {
     return {
       src: { assetId: page.narrationAssetId, loop: page.audioLoop ?? false },
@@ -32,6 +46,7 @@ function sourceForScreen(screen: Screen | undefined): { src: Source; tap: boolea
 export function useScreenAudio(board: Board, screen: Screen | undefined, active: boolean) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentId = useRef<string | null>(null);
+  const currentOwner = useRef<string | null>(null);
   const [pendingTap, setPendingTap] = useState(false);
 
   useEffect(() => {
@@ -48,14 +63,22 @@ export function useScreenAudio(board: Board, screen: Screen | undefined, active:
     const audio = audioRef.current;
     if (!audio || !active) return;
     const { src, tap } = sourceForScreen(screen);
+    const owner = screen ? ownerOf(screen) : null;
 
-    // No audio of its own: whatever is playing carries on.
+    // No audio of its own: the playing track continues only while it
+    // still owns the active screen, and stops otherwise.
     if (!src) {
       setPendingTap(false);
+      if (currentOwner.current && currentOwner.current !== owner) {
+        audio.pause();
+        currentId.current = null;
+        currentOwner.current = null;
+      }
       return;
     }
     if (currentId.current === src.assetId) {
       audio.loop = src.loop;
+      currentOwner.current = owner;
       return;
     }
 
@@ -67,6 +90,7 @@ export function useScreenAudio(board: Board, screen: Screen | undefined, active:
       audio.src = assetObjectUrl(asset.id, asset.blob);
       audio.loop = src.loop;
       currentId.current = src.assetId;
+      currentOwner.current = owner;
       if (tap) {
         setPendingTap(true);
       } else {

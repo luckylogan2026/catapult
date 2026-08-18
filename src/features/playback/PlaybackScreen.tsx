@@ -108,7 +108,11 @@ export function PlaybackScreen({
 
   // Dwell timer with the hairline progress at the very bottom edge.
   const autoAdvance = playlist?.autoAdvance ?? false;
-  const dwellMs = ((current?.page.dwellSeconds ?? playlist?.dwellSeconds ?? 6) * 1000) || 6000;
+  const baseDwellMs = ((current?.page.dwellSeconds ?? playlist?.dwellSeconds ?? 6) * 1000) || 6000;
+  const dwellMs =
+    current?.kind === 'affirmation-roll'
+      ? Math.max(20000, current.list.length * 6000) + 800
+      : baseDwellMs;
   useEffect(() => {
     if (!autoAdvance || paused || !screens || index >= count - 1) return;
     let raf = 0;

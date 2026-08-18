@@ -110,6 +110,9 @@ export type Page = {
    * selectable font list in src/theme/fontChoices.ts.
    */
   masterFont?: string;
+  /** Affirmations pages: one screen per affirmation, or a continuous
+   * teleprompter roll on a single screen. */
+  affirmationDisplay?: 'screens' | 'roll';
   /** Computed ambient letterbox fill, cached. Recomputed when media changes. */
   backdrop?: { color: string; blurDataUri: string };
 };
@@ -169,6 +172,9 @@ export type Playlist = {
    * excluded from it. Inclusion is a filter at render time (deviation c).
    */
   pageOrder: string[];
+  /** Set when the user rearranges this playlist in the order editor.
+   * Until then the playlist mirrors the authoring rail order. */
+  customized?: boolean;
   affirmationMode: 'shuffle' | 'sequential';
   shuffleCount: number;
   autoAdvance: boolean;

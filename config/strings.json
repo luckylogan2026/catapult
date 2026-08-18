@@ -95,7 +95,17 @@
     "fitContain": "Fit",
     "audioLoop": "Loop",
     "audioStartAuto": "Starts with the page",
-    "audioStartTap": "Play on tap"
+    "audioStartTap": "Play on tap",
+    "backgroundAdjust": "Adjust",
+    "affirmationAddBatch": "Add many",
+    "affirmationBatchHint": "One affirmation per line. Empty lines are ignored.",
+    "affirmationBatchAdd": "Add all",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "deleteSelected": "Delete selected",
+    "deleteSelectedConfirm": "Delete the selected affirmations?",
+    "affirmationRoll": "Roll like a teleprompter",
+    "affirmationRollHint": "In playback the affirmations scroll continuously on one screen instead of one per screen."
   },
   "import": {
     "dropHere": "Drop images or video here",

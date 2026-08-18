@@ -11,7 +11,10 @@ import { FormattedText } from '../authoring/FormattedText';
 // screens are full-bleed compositions of their own.
 
 function Backdrop({ screen }: { screen: Screen }) {
-  const page = screen.kind === 'affirmation' ? (screen.introPage ?? screen.page) : screen.page;
+  const page =
+    screen.kind === 'affirmation' || screen.kind === 'affirmation-roll'
+      ? (screen.introPage ?? screen.page)
+      : screen.page;
   const b = page.backdrop;
   return (
     <div className="absolute inset-0" style={{ background: b?.color ?? 'var(--tc-background)' }}>
@@ -125,6 +128,37 @@ export function ScreenView({ board, screen }: { board: Board; screen: Screen }) 
           {a.emotionTag?.trim() && (
             <p className="font-body text-sm uppercase tracking-[0.25em] text-white/70">{a.emotionTag}</p>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (screen.kind === 'affirmation-roll') {
+    const introBg = screen.introPage?.blocks.find((b) => b.slotId === 'background' && b.assetId);
+    // Roughly six seconds of screen time per affirmation.
+    const durationMs = Math.max(20000, screen.list.length * 6000);
+    return (
+      <div className="relative h-full w-full overflow-hidden">
+        <Backdrop screen={screen} />
+        {introBg && <FullBleedMedia block={introBg} />}
+        {introBg && <div className="absolute inset-0 bg-black/40" />}
+        <div
+          className="teleprompter absolute inset-x-0 flex flex-col items-center gap-14 px-8 text-center"
+          style={{ animationDuration: `${durationMs}ms` }}
+        >
+          {screen.list.map((a) => (
+            <div key={a.id} className="flex flex-col items-center gap-2">
+              <p
+                className="max-w-xl font-heading text-[clamp(24px,5.5vw,40px)] font-semibold leading-snug text-white"
+                style={{ textShadow: '0 2px 16px rgba(0,0,0,0.7)' }}
+              >
+                {a.text}
+              </p>
+              {a.emotionTag?.trim() && (
+                <p className="font-body text-xs uppercase tracking-[0.25em] text-white/60">{a.emotionTag}</p>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );

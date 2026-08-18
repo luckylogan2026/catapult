@@ -13,12 +13,14 @@ export type Screen =
   | { kind: 'page'; page: Page; textFlow: boolean }
   | { kind: 'cell'; page: Page; block: Block }
   | { kind: 'affirmation'; page: Page; affirmation: Affirmation; introPage?: Page }
+  | { kind: 'affirmation-roll'; page: Page; list: Affirmation[]; introPage?: Page }
   | { kind: 'master'; page: Page; entry: MasterAffirmation };
 
 export function screenKey(s: Screen): string {
   if (s.kind === 'page') return s.page.id;
   if (s.kind === 'cell') return `${s.page.id}:${s.block.id}`;
   if (s.kind === 'affirmation') return `${s.page.id}:${s.affirmation.id}`;
+  if (s.kind === 'affirmation-roll') return `${s.page.id}:roll`;
   return `${s.page.id}:${s.entry.id}`;
 }
 
@@ -70,8 +72,12 @@ export function buildScreens(
     const def = getPageTypeDef(page.type);
 
     if (def.authoring === 'affirmation-list') {
-      for (const affirmation of affirmationDraw) {
-        screens.push({ kind: 'affirmation', page, affirmation, introPage });
+      if (page.affirmationDisplay === 'roll') {
+        if (affirmationDraw.length) screens.push({ kind: 'affirmation-roll', page, list: affirmationDraw, introPage });
+      } else {
+        for (const affirmation of affirmationDraw) {
+          screens.push({ kind: 'affirmation', page, affirmation, introPage });
+        }
       }
       continue;
     }

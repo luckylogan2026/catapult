@@ -120,7 +120,7 @@ function mapTargetOrder(board: Board, target: OutputTarget, fn: (order: string[]
     return {
       ...board,
       playlists: board.playlists.map((pl) =>
-        pl.id === target ? { ...pl, pageOrder: fn(pl.pageOrder) } : pl,
+        pl.id === target ? { ...pl, customized: true, pageOrder: fn(pl.pageOrder) } : pl,
       ),
     };
   }

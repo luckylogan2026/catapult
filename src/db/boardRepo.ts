@@ -77,7 +77,10 @@ export function reconcileOrders(board: Board): Board {
   };
   return {
     ...board,
-    playlists: board.playlists.map((pl) => ({ ...pl, pageOrder: fix(pl.pageOrder) })),
+    playlists: board.playlists.map((pl) => ({
+      ...pl,
+      pageOrder: pl.customized ? fix(pl.pageOrder) : [...ids],
+    })),
     settings: {
       ...board.settings,
       pdfOrder: { ...board.settings.pdfOrder, pageOrder: fix(board.settings.pdfOrder.pageOrder) },

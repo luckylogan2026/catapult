@@ -238,7 +238,25 @@ function EditorInner() {
                 {getPageTypeDef(page.type)
                   .templates.find((t) => t.id === page.templateId)
                   ?.slots.some((sl) => sl.id === 'background' && sl.kind === 'media') && (
-                  <BackgroundControl page={page} />
+                  <BackgroundControl page={page} onAdjust={(id) => setSelectedBlockId(id)} />
+                )}
+                {def.authoring === 'affirmation-list' && (
+                  <label
+                    title={e.affirmationRollHint}
+                    className="flex items-center gap-1.5 font-body text-xs text-text-muted"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={page.affirmationDisplay === 'roll'}
+                      onChange={(ev) =>
+                        mutate((b) =>
+                          updatePage(b, page.id, { affirmationDisplay: ev.target.checked ? 'roll' : 'screens' }),
+                        )
+                      }
+                      className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+                    />
+                    {e.affirmationRoll}
+                  </label>
                 )}
                 {def.cellExpansion && (
                   <label
@@ -471,7 +489,7 @@ function PageAudioControl({ page }: { page: PageT }) {
 
 // Explicit background affordance for pages whose full-bleed background
 // slot sits underneath the text areas and cannot be clicked directly.
-function BackgroundControl({ page }: { page: PageT }) {
+function BackgroundControl({ page, onAdjust }: { page: PageT; onAdjust: (blockId: string) => void }) {
   const { mutate } = useBoardContext();
   const { importFilesTo } = useImport();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -486,6 +504,15 @@ function BackgroundControl({ page }: { page: PageT }) {
       >
         {bg ? strings.common.replace : strings.common.add}
       </button>
+      {bg && (
+        <button
+          type="button"
+          className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
+          onClick={() => onAdjust(bg.id)}
+        >
+          {e.backgroundAdjust}
+        </button>
+      )}
       {bg && (
         <button
           type="button"
