@@ -4,6 +4,7 @@ import { db } from '../../db/db';
 import { storageEstimate } from '../../db/storage';
 import { useBoardContext } from '../board/BoardContext';
 import { importFiles } from '../../assetPipeline/importAssets';
+import { SyncSection, type useSyncEngine } from '../sync/SyncSection';
 
 const s = strings.settings;
 
@@ -17,7 +18,13 @@ function fmtBytes(n: number): string {
 // readout the performance guardrails call for, the originals toggle,
 // and Start over, which wipes the device copy and returns to setup.
 // The theme editor and playback settings arrive in later phases.
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
+export function SettingsPanel({
+  onClose,
+  syncEngine,
+}: {
+  onClose: () => void;
+  syncEngine?: ReturnType<typeof useSyncEngine>;
+}) {
   const { board, mutate, adoptBoard } = useBoardContext();
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -205,6 +212,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             </p>
           )}
         </div>
+
+        {syncEngine && <SyncSection engine={syncEngine} />}
 
         <div className="mt-4 rounded border border-text-muted/20 p-3">
           <p className="font-body text-sm font-medium text-text">{s.exportTitle}</p>

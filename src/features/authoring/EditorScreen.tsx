@@ -24,6 +24,7 @@ import { useAsset } from './useAssetUrl';
 import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { RecordButton } from './RecordButton';
+import { useSyncEngine, ConflictDialog } from '../sync/SyncSection';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
 import type { PlaylistId } from '../../domain/types';
 
@@ -50,6 +51,7 @@ function EditorInner() {
   const [playing, setPlaying] = useState<PlaylistId | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
+  const syncEngine = useSyncEngine();
 
   const page = board?.pages.find((p) => p.id === selectedPageId) ?? board?.pages[0] ?? null;
   const pageId = page?.id ?? null;
@@ -438,7 +440,9 @@ function EditorInner() {
         </div>
       )}
 
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} syncEngine={syncEngine} />}
+
+      <ConflictDialog engine={syncEngine} />
 
       {playing && <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />}
 

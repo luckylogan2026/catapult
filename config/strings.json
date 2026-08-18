@@ -339,5 +339,24 @@
     "dictateStart": "Speak instead",
     "dictateStop": "Stop listening",
     "finish": "Save and finish"
+  },
+  "sync": {
+    "title": "Google Drive sync",
+    "body": "Optional and off by default. Your board syncs to a private folder in your own Google Drive, so edits on one device appear on the others.",
+    "notConfigured": "Sync is not configured for this copy of the app.",
+    "connect": "Connect Google Drive",
+    "connected": "Connected",
+    "syncNow": "Sync now",
+    "syncing": "Syncing",
+    "statusPushed": "Saved to Drive",
+    "statusPulled": "Updated from Drive",
+    "statusIdle": "Up to date",
+    "statusError": "Sync did not finish. It will try again.",
+    "conflictTitle": "Both copies changed",
+    "conflictBody": "This device and Drive both changed since the last sync. Local edit {local}. Drive edit {remote}. Choose which to keep.",
+    "keepLocal": "Keep this device",
+    "keepRemote": "Keep Drive",
+    "keepBoth": "Keep both",
+    "disconnect": "Disconnect"
   }
 }

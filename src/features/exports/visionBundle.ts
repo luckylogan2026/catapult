@@ -165,7 +165,7 @@ export async function importVisionBundle(file: Blob): Promise<ImportResult> {
 // differ from the original bytes the id was derived from, and the board
 // references the original id. Thumbnails, posters, and dimensions are
 // rebuilt on this device instead of traveling in the bundle.
-async function storeBundleAsset(id: string, blob: Blob): Promise<void> {
+export async function storeBundleAsset(id: string, blob: Blob): Promise<void> {
   const kind: Asset['kind'] = blob.type.startsWith('video/')
     ? 'video'
     : blob.type.startsWith('audio/')
