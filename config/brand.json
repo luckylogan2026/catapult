@@ -1,0 +1,17 @@
+{
+  "appName": "Catapult",
+  "logoPath": "",
+  "defaultThemePreset": "sugarpine-forest",
+  "palette": {
+    "background": "#112B12",
+    "surface": "#1A3D1B",
+    "primary": "#D4A853",
+    "secondary": "#C8D4C4",
+    "text": "#F7F5F0",
+    "textMuted": "#9FAF9B"
+  },
+  "fonts": {
+    "heading": "Playfair Display",
+    "body": "DM Sans"
+  }
+}
