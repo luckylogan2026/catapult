@@ -54,7 +54,10 @@ export function MediaSlot({
     return (
       <div className="absolute overflow-hidden" style={rectCss(slot)}>
         {filled && block ? (
-          <MediaContent block={block} variant="thumb" />
+          <div className="relative h-full w-full">
+            <MediaContent block={block} variant="thumb" />
+            {slot.chapterTile && <ChapterOverlay block={block} />}
+          </div>
         ) : (
           <div className="h-full w-full border border-dashed border-text-muted/25" />
         )}
@@ -81,7 +84,7 @@ export function MediaSlot({
     >
       {filled && block ? (
         <div
-          className="h-full w-full"
+          className="relative h-full w-full"
           draggable
           onDragStart={(e) => {
             e.dataTransfer.setData(SWAP_MIME, block.id);
@@ -89,6 +92,7 @@ export function MediaSlot({
           }}
         >
           <MediaContent block={block} variant="canvas" />
+          {slot.chapterTile && <ChapterOverlay block={block} />}
         </div>
       ) : (
         <button
@@ -159,6 +163,29 @@ function SlotButton({ label, onClick }: { label: string; onClick: () => void }) 
     >
       {label}
     </button>
+  );
+}
+
+// Chapter tiles carry a caption bar and a status treatment. Achieved
+// tiles get the gold ring and mark; the rest stay quiet.
+function ChapterOverlay({ block }: { block: Block }) {
+  const status = block.chapter?.status;
+  return (
+    <>
+      {block.caption && (
+        <div className="absolute inset-x-0 bottom-0 bg-black/55 px-2 py-1 font-body text-[22px] leading-tight text-white">
+          {block.caption}
+        </div>
+      )}
+      {status === 'achieved' && (
+        <>
+          <div className="pointer-events-none absolute inset-0 border-[3px] border-primary" />
+          <span className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary font-body text-[18px] text-background">
+            ✓
+          </span>
+        </>
+      )}
+    </>
   );
 }
 

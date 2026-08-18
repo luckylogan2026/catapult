@@ -50,6 +50,8 @@ export type PageTypeDef = {
   itemFlow?: ItemFlowDef;
   /** Defaults for a freshly added page. */
   defaultLayout?: 'template' | 'canvas';
+  /** Offers the per-page one-picture-per-screen playback toggle. */
+  cellExpansion?: boolean;
   /** A custom authoring surface replaces the canvas for this type. */
   authoring?: 'affirmation-list';
 };

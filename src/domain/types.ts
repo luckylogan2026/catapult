@@ -89,6 +89,12 @@ export type Page = {
   narrationAssetId?: string;
   dwellSeconds?: number;
   include: PageInclude;
+  /**
+   * Vision board and legacy pages: when true, playback expands each
+   * filled media cell to its own full screen, in slot order, instead of
+   * showing the mosaic as one page. Set per page in the editor.
+   */
+  expandCells?: boolean;
   /** Computed ambient letterbox fill, cached. Recomputed when media changes. */
   backdrop?: { color: string; blurDataUri: string };
 };

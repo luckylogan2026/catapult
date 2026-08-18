@@ -6,6 +6,7 @@ import type { PageTypeDef } from '../types';
 export const legacy: PageTypeDef = {
   type: 'legacy',
   textFlow: false,
+  cellExpansion: true,
   defaultTemplateId: 'mosaic-3',
   templates: visionBoardTemplates,
 };

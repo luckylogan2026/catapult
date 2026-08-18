@@ -72,7 +72,9 @@
     "affirmationEmotionLabel": "Emotion",
     "affirmationActive": "Active",
     "affirmationClearExamples": "Remove all example affirmations",
-    "affirmationExampleTag": "Example"
+    "affirmationExampleTag": "Example",
+    "expandCells": "One picture per screen",
+    "expandCellsHint": "In playback, each picture in this mosaic gets its own full screen."
   },
   "import": {
     "dropHere": "Drop images or video here",
@@ -123,27 +125,45 @@
     "principles": {
       "name": "Principles",
       "description": "Up to nine numbered principles, a heading and a paragraph each.",
-      "slots": { "title": "Principles", "subtitle": "Keywords" }
+      "slots": {
+        "title": "Principles",
+        "subtitle": "Keywords"
+      }
     },
     "daily-ritual": {
       "name": "Daily Ritual",
       "description": "Short numbered steps for the daily practice.",
-      "slots": { "title": "Daily Ritual", "subtitle": "Keywords" }
+      "slots": {
+        "title": "Daily Ritual",
+        "subtitle": "Keywords"
+      }
     },
     "vision-board": {
       "name": "Vision Board",
       "description": "A headline, keywords, and a mosaic of images or video.",
-      "slots": { "title": "Vision", "keywords": "Comma separated keywords", "cell": "Image or video" }
+      "slots": {
+        "title": "Vision",
+        "keywords": "Comma separated keywords",
+        "cell": "Image or video"
+      }
     },
     "legacy": {
       "name": "Legacy",
       "description": "The same mosaic, written in the past tense. Achieved chapters gather here.",
-      "slots": { "title": "Legacy", "keywords": "Comma separated keywords", "cell": "Image or video" }
+      "slots": {
+        "title": "Legacy",
+        "keywords": "Comma separated keywords",
+        "cell": "Image or video"
+      }
     },
     "chapters": {
       "name": "Chapters",
       "description": "A grid of life chapters, each with an image, a caption, and a status.",
-      "slots": { "title": "Chapters", "subtitle": "Keywords", "tile": "Chapter" }
+      "slots": {
+        "title": "Chapters",
+        "subtitle": "Keywords",
+        "tile": "Chapter"
+      }
     },
     "manifesto": {
       "name": "Manifesto",
@@ -167,7 +187,10 @@
     "goals": {
       "name": "Goals",
       "description": "Numbered goals under headings you define.",
-      "slots": { "title": "Goals", "subtitle": "Keywords" }
+      "slots": {
+        "title": "Goals",
+        "subtitle": "Keywords"
+      }
     },
     "affirmations-intro": {
       "name": "Affirmations Intro",
@@ -181,7 +204,10 @@
     "affirmations": {
       "name": "Affirmations",
       "description": "Your affirmation list. In playback, each one gets its own screen.",
-      "slots": { "title": "Affirmations", "subtitle": "Keywords" }
+      "slots": {
+        "title": "Affirmations",
+        "subtitle": "Keywords"
+      }
     },
     "asp-process": {
       "name": "ASP Process",

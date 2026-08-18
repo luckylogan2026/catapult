@@ -58,6 +58,7 @@ export const visionBoardTemplates: TemplateDef[] = [
 export const visionBoard: PageTypeDef = {
   type: 'vision-board',
   textFlow: false,
+  cellExpansion: true,
   defaultTemplateId: 'mosaic-3',
   templates: visionBoardTemplates,
 };

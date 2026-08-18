@@ -173,6 +173,20 @@ function EditorInner() {
                     {page.layout === 'template' ? e.unlockCanvas : e.relockTemplate}
                   </button>
                 )}
+                {def.cellExpansion && (
+                  <label
+                    title={e.expandCellsHint}
+                    className="flex items-center gap-1.5 font-body text-xs text-text-muted"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={page.expandCells ?? false}
+                      onChange={(ev) => mutate((b) => updatePage(b, page.id, { expandCells: ev.target.checked }))}
+                      className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+                    />
+                    {e.expandCells}
+                  </label>
+                )}
                 {def.itemFlow && page.layout === 'template' && (
                   <button
                     type="button"
