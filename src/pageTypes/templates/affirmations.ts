@@ -1,4 +1,4 @@
-import { subtitleSlot, titleSlot } from '../geometry';
+import { titleSlot } from '../geometry';
 import type { PageTypeDef } from '../types';
 
 // In authoring this page opens the affirmation list editor, not the
@@ -11,5 +11,5 @@ export const affirmations: PageTypeDef = {
   textFlow: false,
   defaultTemplateId: 'list',
   authoring: 'affirmation-list',
-  templates: [{ id: 'list', nameKey: 'list', slots: [titleSlot(), subtitleSlot()] }],
+  templates: [{ id: 'list', nameKey: 'list', slots: [titleSlot()] }],
 };

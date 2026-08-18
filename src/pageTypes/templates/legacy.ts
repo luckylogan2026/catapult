@@ -1,12 +1,12 @@
-import { visionBoardTemplates } from './visionBoard';
+import { chapterGridTemplates } from './chapters';
 import type { PageTypeDef } from '../types';
 
-// Structurally identical to the vision board, framed in the past tense.
-// Achieved chapters accumulate here. The framing lives in strings.json.
+// Structurally a My Story grid, framed in the past tense. Achieved
+// chapters mirror onto this page as tiles. The framing lives in
+// strings.json.
 export const legacy: PageTypeDef = {
   type: 'legacy',
   textFlow: false,
-  cellExpansion: true,
-  defaultTemplateId: 'mosaic-3',
-  templates: visionBoardTemplates,
+  defaultTemplateId: 'grid-9',
+  templates: chapterGridTemplates,
 };

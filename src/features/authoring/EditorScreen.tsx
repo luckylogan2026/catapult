@@ -202,6 +202,11 @@ function EditorInner() {
                   </select>
                 )}
                 {def.pageAudio && <PageAudioControl page={page} />}
+                {getPageTypeDef(page.type)
+                  .templates.find((t) => t.id === page.templateId)
+                  ?.slots.some((sl) => sl.id === 'background' && sl.kind === 'media') && (
+                  <BackgroundControl page={page} />
+                )}
                 {def.cellExpansion && (
                   <label
                     title={e.expandCellsHint}
@@ -402,6 +407,56 @@ function PageAudioControl({ page }: { page: PageT }) {
             archiveOriginals: board.settings.archiveOriginals,
           });
           if (r) mutate((b) => updatePage(b, page.id, { narrationAssetId: r.asset.id }));
+        }}
+      />
+    </span>
+  );
+}
+
+// Explicit background affordance for pages whose full-bleed background
+// slot sits underneath the text areas and cannot be clicked directly.
+function BackgroundControl({ page }: { page: PageT }) {
+  const { mutate } = useBoardContext();
+  const { importFilesTo } = useImport();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const bg = page.blocks.find((b) => b.slotId === 'background' && b.assetId);
+  return (
+    <span className="flex items-center gap-1.5 font-body text-xs text-text-muted">
+      {e.backgroundLabel}
+      <button
+        type="button"
+        className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
+        onClick={() => fileRef.current?.click()}
+      >
+        {bg ? strings.common.replace : strings.common.add}
+      </button>
+      {bg && (
+        <button
+          type="button"
+          className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
+          onClick={() =>
+            mutate((b) => ({
+              ...b,
+              pages: b.pages.map((p) =>
+                p.id === page.id
+                  ? { ...p, blocks: p.blocks.filter((bl) => bl.id !== bg.id) }
+                  : p,
+              ),
+            }))
+          }
+        >
+          {strings.common.remove}
+        </button>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,video/*"
+        hidden
+        onChange={(ev) => {
+          const files = [...(ev.target.files ?? [])];
+          ev.target.value = '';
+          if (files.length) void importFilesTo(files, { pageId: page.id, slotId: 'background' });
         }}
       />
     </span>

@@ -149,6 +149,7 @@ export function PageView({
                 selected={interactive && !!block && selectedBlockId === block.id}
                 onSelect={() => block && onSelectBlock?.(block.id)}
                 onSwap={(fromId, toSlot) => mutate((b) => swapSlots(b, page.id, fromId, toSlot))}
+                onPatch={(patch) => block && mutate((b) => updateBlock(b, page.id, block.id, patch))}
                 onCreateEmpty={() => {
                   const id = crypto.randomUUID();
                   mutate((b) => ({

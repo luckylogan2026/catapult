@@ -25,9 +25,13 @@ const tiles: SlotDef[] = Array.from({ length: COLS * ROWS }, (_, i) => ({
   },
 }));
 
+export const chapterGridTemplates = [
+  { id: 'grid-9', nameKey: 'gridNine', slots: [titleSlot(), subtitleSlot(), ...tiles] },
+];
+
 export const chapters: PageTypeDef = {
   type: 'chapters',
   textFlow: false,
   defaultTemplateId: 'grid-9',
-  templates: [{ id: 'grid-9', nameKey: 'gridNine', slots: [titleSlot(), subtitleSlot(), ...tiles] }],
+  templates: chapterGridTemplates,
 };

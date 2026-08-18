@@ -19,7 +19,8 @@
     "remove": "Remove",
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "close": "Close"
+    "close": "Close",
+    "replace": "Replace"
   },
   "setup": {
     "welcomeTitle": "Welcome",
@@ -85,7 +86,11 @@
     "masterAffirmationAdd": "Add master affirmation",
     "masterAffirmationTextLabel": "Declaration",
     "masterAffirmationAudio": "Audio",
-    "chapterAddText": "Text chapter"
+    "chapterAddText": "Text chapter",
+    "backgroundLabel": "Background",
+    "bulletList": "Bullets",
+    "numberList": "Numbers",
+    "dragToReposition": "Drag the picture to position it in its frame."
   },
   "import": {
     "dropHere": "Drop images or video here",
@@ -159,10 +164,11 @@
     },
     "legacy": {
       "name": "Legacy",
-      "description": "The same mosaic, written in the past tense. Achieved chapters gather here.",
+      "description": "A My Story grid in the past tense. Achieved chapters gather here.",
       "slots": {
         "title": "Legacy",
-        "cell": "Image or video"
+        "subtitle": "Keywords",
+        "tile": "Chapter"
       }
     },
     "chapters": {
@@ -210,7 +216,6 @@
       "description": "The framing page with its own background, which also backs each affirmation screen in playback.",
       "slots": {
         "title": "Affirmations",
-        "subtitle": "Keywords",
         "body": "Each affirmation pairs a thought with an image and an emotion. Read each one aloud, look at its image, and let the feeling arrive before moving on.",
         "background": "Background image or video"
       }
@@ -219,8 +224,7 @@
       "name": "Affirmations",
       "description": "Your affirmation list. In playback, each one gets its own screen.",
       "slots": {
-        "title": "Affirmations",
-        "subtitle": "Keywords"
+        "title": "Affirmations"
       }
     },
     "asp-process": {
@@ -242,8 +246,7 @@
       "name": "Master Affirmations",
       "description": "Longer declarations, paragraph length, each with optional recorded audio.",
       "slots": {
-        "title": "Master Affirmations",
-        "subtitle": "Keywords"
+        "title": "Master Affirmations"
       }
     }
   },

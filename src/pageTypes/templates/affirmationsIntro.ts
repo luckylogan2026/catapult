@@ -1,5 +1,5 @@
 import { CANVAS_H, CANVAS_W } from '../../domain/types';
-import { bodySlot, subtitleSlot, titleSlot } from '../geometry';
+import { bodySlot, titleSlot } from '../geometry';
 import type { PageTypeDef } from '../types';
 
 // The framing page: the thought plus image plus emotion rule and any
@@ -20,7 +20,6 @@ export const affirmationsIntro: PageTypeDef = {
           rect: { x: 0, y: 0, w: CANVAS_W, h: CANVAS_H, rot: 0 },
         },
         titleSlot(),
-        subtitleSlot(),
         bodySlot(),
       ],
     },

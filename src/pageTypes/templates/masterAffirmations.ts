@@ -1,4 +1,4 @@
-import { subtitleSlot, titleSlot } from '../geometry';
+import { titleSlot } from '../geometry';
 import type { PageTypeDef } from '../types';
 
 // Master affirmations: longer declarations, paragraph length, each
@@ -10,5 +10,5 @@ export const masterAffirmations: PageTypeDef = {
   textFlow: false,
   defaultTemplateId: 'list',
   authoring: 'master-affirmation-list',
-  templates: [{ id: 'list', nameKey: 'list', slots: [titleSlot(), subtitleSlot()] }],
+  templates: [{ id: 'list', nameKey: 'list', slots: [titleSlot()] }],
 };

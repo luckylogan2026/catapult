@@ -20,6 +20,7 @@ export function MediaSlot({
   onSelect,
   onSwap,
   onCreateEmpty,
+  onPatch,
   variant,
 }: {
   page: Page;
@@ -30,11 +31,13 @@ export function MediaSlot({
   onSelect: () => void;
   onSwap: (fromBlockId: string, toSlotId: string) => void;
   onCreateEmpty?: () => void;
+  onPatch: (patch: Partial<Block>) => void;
   variant: 'canvas' | 'thumb';
 }) {
   const { importFilesTo, importUrlTo } = useImport();
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const panRef = useRef<{ startX: number; startY: number; focal: { x: number; y: number }; w: number; h: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const filled = !!block?.assetId;
   const target = { pageId: page.id, slotId: slot.id };
@@ -92,37 +95,79 @@ export function MediaSlot({
       onDrop={onDrop}
     >
       {filled && block ? (
+        // Selected: dragging pans the picture inside its frame (the
+        // focal point), so faces stay in view. Unselected: dragging
+        // moves the content to another slot to swap.
         <div
           className="relative h-full w-full"
-          draggable
+          draggable={!selected}
+          title={selected ? strings.editor.dragToReposition : undefined}
+          style={selected ? { cursor: 'grab', touchAction: 'none' } : undefined}
           onDragStart={(e) => {
             e.dataTransfer.setData(SWAP_MIME, block.id);
             e.dataTransfer.effectAllowed = 'move';
+          }}
+          onPointerDown={(e) => {
+            if (!selected) return;
+            e.stopPropagation();
+            const el = e.currentTarget;
+            el.setPointerCapture(e.pointerId);
+            panRef.current = {
+              startX: e.clientX,
+              startY: e.clientY,
+              focal: block.focal ?? { x: 0.5, y: 0.5 },
+              w: el.clientWidth,
+              h: el.clientHeight,
+            };
+          }}
+          onPointerMove={(e) => {
+            const p = panRef.current;
+            if (!p) return;
+            const clamp = (v: number) => Math.min(1, Math.max(0, v));
+            onPatch({
+              focal: {
+                x: clamp(p.focal.x - (e.clientX - p.startX) / p.w),
+                y: clamp(p.focal.y - (e.clientY - p.startY) / p.h),
+              },
+            });
+          }}
+          onPointerUp={(e) => {
+            if (panRef.current) (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+            panRef.current = null;
           }}
         >
           <MediaContent block={block} variant="canvas" />
           {slot.chapterTile && <ChapterOverlay block={block} />}
         </div>
-      ) : textTile && block ? (
-        <div className="relative h-full w-full">
-          <TextTile block={block} />
-          <ChapterOverlay block={block} captionShown />
-        </div>
       ) : block && slot.chapterTile ? (
-        // A chapter block exists but has neither media nor caption yet:
-        // keep it selected so the inspector offers caption and status,
-        // while the tile still accepts media.
-        <button
-          type="button"
-          className="flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed border-text-muted/40 bg-surface/40 p-3 text-center"
+        // A text chapter, or one still being written: the caption is
+        // edited directly in the tile.
+        <div
+          className={`relative flex h-full w-full items-center justify-center border p-3 text-center ${
+            textTile ? 'border-text-muted/30 bg-surface/70' : 'border-dashed border-text-muted/40 bg-surface/40'
+          }`}
           onClick={(e) => {
             e.stopPropagation();
             onSelect();
           }}
         >
-          <span className="font-body text-[26px] text-text-muted">{prompt}</span>
-          <span className="font-body text-[20px] text-text-muted/70">{strings.import.dropHere}</span>
-        </button>
+          {selected ? (
+            <textarea
+              autoFocus
+              value={block.caption ?? ''}
+              placeholder={prompt}
+              onChange={(ev) => onPatch({ caption: ev.target.value })}
+              onClick={(ev) => ev.stopPropagation()}
+              className="h-full w-full resize-none bg-transparent text-center font-heading text-[30px] leading-snug text-text outline-none placeholder:text-text-muted/50"
+              style={{ paddingTop: '30%' }}
+            />
+          ) : (
+            <span className="font-heading text-[30px] leading-snug text-text">
+              {block.caption?.trim() || <span className="text-text-muted/60">{prompt}</span>}
+            </span>
+          )}
+          <ChapterOverlay block={block} captionShown />
+        </div>
       ) : (
         <button
           type="button"

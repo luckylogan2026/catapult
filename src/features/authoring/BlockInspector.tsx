@@ -48,6 +48,24 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
               </button>
             ))}
           </div>
+          <div className="flex overflow-hidden rounded border border-text-muted/30">
+            <button
+              type="button"
+              title={e.bulletList}
+              onClick={() => patch({ text: toggleListPrefix(block.text ?? '', 'bullet') })}
+              className="px-2 py-0.5 font-body text-xs text-text-muted hover:text-text"
+            >
+              • {e.bulletList}
+            </button>
+            <button
+              type="button"
+              title={e.numberList}
+              onClick={() => patch({ text: toggleListPrefix(block.text ?? '', 'number') })}
+              className="px-2 py-0.5 font-body text-xs text-text-muted hover:text-text"
+            >
+              1. {e.numberList}
+            </button>
+          </div>
           <ColorControl block={block} onPatch={patch} />
           <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
             <input
@@ -132,6 +150,28 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
       )}
     </div>
   );
+}
+
+// Turns the block's lines into a bullet or numbered list, or back to
+// plain lines when they already are one. Empty lines stay as paragraph
+// breaks either way.
+function toggleListPrefix(text: string, kind: 'bullet' | 'number'): string {
+  const lines = text.split('\n');
+  const content = lines.filter((l) => l.trim());
+  const strip = (l: string) => l.replace(/^\s*[-*]\s+/, '').replace(/^\s*\d+[.)]\s+/, '');
+  const already =
+    content.length > 0 &&
+    content.every((l) => (kind === 'bullet' ? /^\s*[-*]\s+/.test(l) : /^\s*\d+[.)]\s+/.test(l)));
+  let n = 0;
+  return lines
+    .map((l) => {
+      if (!l.trim()) return l;
+      const bare = strip(l);
+      if (already) return bare;
+      n += 1;
+      return kind === 'bullet' ? `- ${bare}` : `${n}. ${bare}`;
+    })
+    .join('\n');
 }
 
 // Text color: the theme roles plus white, black, and a free custom pick.
