@@ -58,7 +58,31 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         return;
       }
       await adoptBoard(result.board);
-      setNotice(s.importDone);
+      setNotice(
+        s.importSummary
+          .replace('{pages}', String(result.board.pages.length))
+          .replace('{affirmations}', String(result.board.affirmations.length))
+          .replace('{assets}', String(result.assetCount)),
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const savePdf = async () => {
+    if (!board) return;
+    setNotice(null);
+    setBusy(s.exportingPdf.replace('{n}', '1').replace('{total}', '?'));
+    try {
+      const { exportPdf, pdfFilename } = await import('../exports/pdfExport');
+      const blob = await exportPdf(board, (done, total) =>
+        setBusy(s.exportingPdf.replace('{n}', String(Math.min(done + 1, total))).replace('{total}', String(total))),
+      );
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = pdfFilename(board);
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     } finally {
       setBusy(null);
     }
@@ -135,6 +159,68 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               {persisted ? s.storagePersistent : s.storageNotPersistent}
             </p>
           )}
+        </div>
+
+        <div className="mt-4 rounded border border-text-muted/20 p-3">
+          <p className="font-body text-sm font-medium text-text">{s.exportTitle}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={!!busy}
+              className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text hover:border-primary disabled:opacity-50"
+              onClick={savePdf}
+            >
+              {s.exportPdf}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded border border-text-muted/20 p-3">
+          <p className="font-body text-sm font-medium text-text">{s.affirmationPlayTitle}</p>
+          {board.playlists.map((pl) => (
+            <div key={pl.id} className="mt-2 flex flex-wrap items-center gap-2 font-body text-sm text-text">
+              <span className="w-16 text-text-muted">{pl.name}</span>
+              <select
+                value={pl.affirmationMode}
+                onChange={(ev) =>
+                  mutate((b) => ({
+                    ...b,
+                    playlists: b.playlists.map((x) =>
+                      x.id === pl.id
+                        ? { ...x, affirmationMode: ev.target.value as 'shuffle' | 'sequential' }
+                        : x,
+                    ),
+                  }))
+                }
+                className="rounded border border-text-muted/30 bg-background px-2 py-1 text-xs"
+              >
+                <option value="sequential">{s.affirmationModeAll}</option>
+                <option value="shuffle">{s.affirmationModeShuffle}</option>
+              </select>
+              {pl.affirmationMode === 'shuffle' && (
+                <label className="flex items-center gap-1 text-xs text-text-muted">
+                  {s.affirmationCountLabel}
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={pl.shuffleCount}
+                    onChange={(ev) =>
+                      mutate((b) => ({
+                        ...b,
+                        playlists: b.playlists.map((x) =>
+                          x.id === pl.id
+                            ? { ...x, shuffleCount: Math.max(1, Number(ev.target.value) || 1) }
+                            : x,
+                        ),
+                      }))
+                    }
+                    className="w-16 rounded border border-text-muted/30 bg-background px-1 py-0.5 text-text"
+                  />
+                </label>
+              )}
+            </div>
+          ))}
         </div>
 
         <label className="mt-4 flex items-start gap-2 font-body text-sm text-text">

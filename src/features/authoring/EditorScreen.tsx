@@ -410,7 +410,16 @@ function EditorInner() {
             className="max-h-full w-full max-w-2xl overflow-y-auto rounded-lg bg-surface p-4"
             onClick={(ev) => ev.stopPropagation()}
           >
-            <h2 className="font-heading text-xl text-text">{e.addPage}</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-xl text-text">{e.addPage}</h2>
+              <button
+                type="button"
+                className="rounded px-2 py-1 font-body text-sm text-text-muted hover:text-text"
+                onClick={() => setAddOpen(false)}
+              >
+                {strings.common.close} ✕
+              </button>
+            </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {pageTypeRegistry.map((d) => (
                 <button

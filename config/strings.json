@@ -306,7 +306,15 @@
     "importNewer": "This backup was made by a newer version of the app. Update the app first, then load it again.",
     "importDone": "Backup loaded.",
     "exporting": "Preparing the backup file",
-    "importing": "Loading the backup"
+    "importing": "Loading the backup",
+    "importSummary": "Backup loaded: {pages} pages, {affirmations} affirmations, {assets} media files.",
+    "affirmationPlayTitle": "Affirmations in playback",
+    "affirmationModeAll": "All, in order",
+    "affirmationModeShuffle": "Shuffled subset",
+    "affirmationCountLabel": "How many per session",
+    "exportTitle": "Exports",
+    "exportPdf": "Export PDF",
+    "exportingPdf": "Rendering page {n} of {total}"
   },
   "playback": {
     "preview": "Preview",
