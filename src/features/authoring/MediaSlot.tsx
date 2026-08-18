@@ -1,0 +1,172 @@
+import { useRef, useState, type DragEvent } from 'react';
+import { strings } from '../../config';
+import { useImport } from './ImportContext';
+import { MediaContent } from './MediaContent';
+import type { Block, Page } from '../../domain/types';
+import type { SlotDef } from '../../pageTypes/types';
+
+const SWAP_MIME = 'application/x-catapult-slot';
+
+// A template slot for media. Empty: a drop zone with the prompt and the
+// import methods. Filled: the media, draggable to another slot to swap,
+// with a focal point drag when selected. Chapter tiles add a caption and
+// a status ring in the inspector.
+export function MediaSlot({
+  page,
+  slot,
+  block,
+  prompt,
+  selected,
+  onSelect,
+  onSwap,
+  variant,
+}: {
+  page: Page;
+  slot: SlotDef;
+  block?: Block;
+  prompt: string;
+  selected: boolean;
+  onSelect: () => void;
+  onSwap: (fromBlockId: string, toSlotId: string) => void;
+  variant: 'canvas' | 'thumb';
+}) {
+  const { importFilesTo, importUrlTo } = useImport();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const filled = !!block?.assetId;
+  const target = { pageId: page.id, slotId: slot.id };
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const fromId = e.dataTransfer.getData(SWAP_MIME);
+    if (fromId) {
+      onSwap(fromId, slot.id);
+      return;
+    }
+    const files = [...e.dataTransfer.files];
+    if (files.length) void importFilesTo(files, target);
+  };
+
+  if (variant === 'thumb') {
+    return (
+      <div className="absolute overflow-hidden" style={rectCss(slot)}>
+        {filled && block ? (
+          <MediaContent block={block} variant="thumb" />
+        ) : (
+          <div className="h-full w-full border border-dashed border-text-muted/25" />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`group absolute overflow-hidden ${selected ? 'ring-2 ring-primary' : ''} ${
+        dragOver ? 'ring-2 ring-secondary' : ''
+      }`}
+      style={rectCss(slot)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={onDrop}
+    >
+      {filled && block ? (
+        <div
+          className="h-full w-full"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData(SWAP_MIME, block.id);
+            e.dataTransfer.effectAllowed = 'move';
+          }}
+        >
+          <MediaContent block={block} variant="canvas" />
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed border-text-muted/40 bg-surface/40 p-3 text-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+            fileRef.current?.click();
+          }}
+        >
+          <span className="font-body text-[26px] text-text-muted">{prompt}</span>
+          <span className="font-body text-[20px] text-text-muted/70">{strings.import.dropHere}</span>
+        </button>
+      )}
+
+      {selected && (
+        <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded bg-background/85 p-1">
+          <SlotButton label={strings.import.fromFiles} onClick={() => fileRef.current?.click()} />
+          <SlotButton label={strings.import.fromCamera} onClick={() => cameraRef.current?.click()} />
+          <SlotButton
+            label={strings.import.fromUrl}
+            onClick={() => {
+              const url = window.prompt(strings.import.urlPrompt);
+              if (url) void importUrlTo(url, target);
+            }}
+          />
+        </div>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = '';
+          if (files.length) void importFilesTo(files, target);
+        }}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*,video/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = '';
+          if (files.length) void importFilesTo(files, target);
+        }}
+      />
+    </div>
+  );
+}
+
+function SlotButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="rounded px-2 py-1 font-body text-[22px] text-text hover:bg-surface"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function rectCss(slot: SlotDef): React.CSSProperties {
+  return {
+    left: slot.rect.x,
+    top: slot.rect.y,
+    width: slot.rect.w,
+    height: slot.rect.h,
+  };
+}

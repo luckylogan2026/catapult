@@ -13,16 +13,12 @@ export async function loadBoard(): Promise<Board | null> {
   return all[0] ?? null;
 }
 
-// Every persisted mutation bumps the revision counter and lastEdited.
-// Phase 6 sync compares both.
+// Writes the board as given. The caller stamps revision and lastEdited
+// (BoardContext.apply), so undo restores also advance the revision,
+// which Phase 6 sync requires.
 export async function persistBoard(board: Board): Promise<Board> {
-  const next: Board = {
-    ...board,
-    revision: board.revision + 1,
-    meta: { ...board.meta, lastEdited: new Date().toISOString() },
-  };
-  await db.boards.put(next);
-  return next;
+  await db.boards.put(board);
+  return board;
 }
 
 function defaultPlaylist(id: Playlist['id'], name: string): Playlist {
