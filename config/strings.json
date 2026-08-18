@@ -317,7 +317,7 @@
     "exportingPdf": "Rendering page {n} of {total}"
   },
   "playback": {
-    "preview": "Preview",
+    "preview": "Play",
     "playMorning": "Morning",
     "playEvening": "Evening",
     "empty": "Nothing to play yet. Add pages and include them in this playlist.",
