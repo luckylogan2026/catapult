@@ -3,6 +3,7 @@ import { strings } from '../../config';
 import { db } from '../../db/db';
 import { storageEstimate } from '../../db/storage';
 import { useBoardContext } from '../board/BoardContext';
+import { importFiles } from '../../assetPipeline/importAssets';
 
 const s = strings.settings;
 
@@ -89,6 +90,22 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   };
 
   const [htmlInfo, setHtmlInfo] = useState<{ tooBig: boolean; size: string } | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const trackRef = useRef<HTMLInputElement>(null);
+  const trackTarget = useRef<'morning' | 'evening'>('morning');
+
+  useEffect(() => {
+    const load = () => setVoices(speechSynthesis.getVoices());
+    load();
+    speechSynthesis.addEventListener('voiceschanged', load);
+    return () => speechSynthesis.removeEventListener('voiceschanged', load);
+  }, []);
+
+  const setTrack = (pl: 'morning' | 'evening', assetId: string | undefined) =>
+    mutate((b) => ({
+      ...b,
+      playlists: b.playlists.map((x) => (x.id === pl ? { ...x, backgroundTrackAssetId: assetId } : x)),
+    }));
 
   const saveHtml = async (single: boolean) => {
     if (!board) return;
@@ -242,6 +259,41 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 <option value="sequential">{s.affirmationModeAll}</option>
                 <option value="shuffle">{s.affirmationModeShuffle}</option>
               </select>
+              <button
+                type="button"
+                className="rounded border border-text-muted/30 px-2 py-0.5 text-xs text-text-muted hover:text-text"
+                onClick={() => {
+                  trackTarget.current = pl.id;
+                  trackRef.current?.click();
+                }}
+              >
+                {s.backgroundTrackLabel}{pl.backgroundTrackAssetId ? ' ✓' : ''}
+              </button>
+              {pl.backgroundTrackAssetId && (
+                <button
+                  type="button"
+                  className="rounded border border-text-muted/30 px-1.5 py-0.5 text-[10px] text-text-muted hover:text-text"
+                  onClick={() => setTrack(pl.id, undefined)}
+                >
+                  {strings.common.remove}
+                </button>
+              )}
+              <label className="flex items-center gap-1 text-xs text-text-muted">
+                <input
+                  type="checkbox"
+                  checked={pl.ttsEnabled}
+                  onChange={(ev) =>
+                    mutate((b) => ({
+                      ...b,
+                      playlists: b.playlists.map((x) =>
+                        x.id === pl.id ? { ...x, ttsEnabled: ev.target.checked } : x,
+                      ),
+                    }))
+                  }
+                  className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+                />
+                {s.ttsLabel}
+              </label>
               {pl.affirmationMode === 'shuffle' && (
                 <label className="flex items-center gap-1 text-xs text-text-muted">
                   {s.affirmationCountLabel}
@@ -266,6 +318,58 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               )}
             </div>
           ))}
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-text-muted/15 pt-3">
+            <label className="flex items-center gap-1 font-body text-xs text-text-muted">
+              {s.ttsVoiceLabel}
+              <select
+                value={board.settings.ttsVoiceURI ?? ''}
+                onChange={(ev) =>
+                  mutate((b) => ({
+                    ...b,
+                    settings: { ...b.settings, ttsVoiceURI: ev.target.value || undefined },
+                  }))
+                }
+                className="max-w-48 rounded border border-text-muted/30 bg-background px-1 py-0.5 text-text"
+              >
+                <option value=""></option>
+                {voices.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-1 font-body text-xs text-text-muted">
+              {s.ttsRateLabel}
+              <input
+                type="range"
+                min={0.5}
+                max={1.4}
+                step={0.05}
+                value={board.settings.ttsRate || 0.9}
+                onChange={(ev) =>
+                  mutate((b) => ({
+                    ...b,
+                    settings: { ...b.settings, ttsRate: Number(ev.target.value) },
+                  }))
+                }
+              />
+            </label>
+          </div>
+          <p className="mt-2 font-body text-[11px] text-text-muted">{s.ttsDeviceNote}</p>
+          <input
+            ref={trackRef}
+            type="file"
+            accept="audio/*"
+            hidden
+            onChange={async (ev) => {
+              const f = ev.target.files?.[0];
+              ev.target.value = '';
+              if (!f || !board) return;
+              const [r] = await importFiles([f], { archiveOriginals: board.settings.archiveOriginals });
+              if (r) setTrack(trackTarget.current, r.asset.id);
+            }}
+          />
         </div>
 
         <label className="mt-4 flex items-start gap-2 font-body text-sm text-text">

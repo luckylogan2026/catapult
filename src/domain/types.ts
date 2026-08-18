@@ -96,6 +96,8 @@ export type Page = {
   audioLoop?: boolean;
   /** Page audio starts with the page, or waits for a tap. */
   audioStart?: 'auto' | 'tap';
+  /** Seconds of silence a [pause] marker inserts during speech. */
+  pauseSeconds?: number;
   dwellSeconds?: number;
   include: PageInclude;
   /**

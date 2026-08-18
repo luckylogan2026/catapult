@@ -7,6 +7,7 @@ import { ensureBackdrops } from '../../lib/backdrop';
 import { buildScreens, drawAffirmations, screenKey, type Screen } from './screens';
 import { ScreenView } from './ScreenView';
 import { useScreenAudio } from './useScreenAudio';
+import { useSessionAudio } from './useSessionAudio';
 
 const p = strings.playback;
 
@@ -82,7 +83,14 @@ export function PlaybackScreen({
 
   const count = screens?.length ?? 0;
   const current = screens?.[index];
-  const { pendingTap, startPending, stop } = useScreenAudio(board!, current, !!screens);
+  const { setDucked } = useSessionAudio(playlist);
+  const { pendingTap, startPending, stop } = useScreenAudio(
+    board!,
+    playlist,
+    current,
+    !!screens,
+    setDucked,
+  );
 
   const goTo = useCallback(
     (next: number, mode: 'slide' | 'fade' = 'fade') => {

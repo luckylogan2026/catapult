@@ -110,7 +110,10 @@
     "rollSpeedLabel": "Roll speed",
     "rollSlow": "Slow",
     "rollNormal": "Normal",
-    "rollFast": "Fast"
+    "rollFast": "Fast",
+    "recordStart": "Record",
+    "recordStop": "Stop",
+    "recordError": "Microphone access was refused."
   },
   "import": {
     "dropHere": "Drop images or video here",
@@ -318,7 +321,13 @@
     "exportHtml": "Export HTML (zip)",
     "exportHtmlSingle": "Export single file",
     "exportHtmlSingleTooBig": "Single file needs media under 25 MB. This board has {size}.",
-    "exportingHtml": "Building the HTML export"
+    "exportingHtml": "Building the HTML export",
+    "playlistAudioTitle": "Playback audio",
+    "backgroundTrackLabel": "Background music",
+    "ttsLabel": "Speak affirmations aloud",
+    "ttsVoiceLabel": "Voice",
+    "ttsRateLabel": "Speaking rate",
+    "ttsDeviceNote": "Available voices depend on this device. Some Android voices need a one-time download in system settings before they work offline."
   },
   "playback": {
     "preview": "Play",

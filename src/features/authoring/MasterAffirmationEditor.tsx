@@ -4,6 +4,7 @@ import type { Board, MasterAffirmation } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { importFiles } from '../../assetPipeline/importAssets';
 import { useAsset, useAssetUrl } from './useAssetUrl';
+import { RecordButton } from './RecordButton';
 
 const e = strings.editor;
 
@@ -127,6 +128,7 @@ function MasterRow({
         >
           {entry.audioAssetId ? e.pageAudioReplace : e.pageAudioAdd}
         </button>
+        <RecordButton onRecorded={(id) => onPatch({ audioAssetId: id })} />
         {entry.audioAssetId && (
           <button
             type="button"

@@ -5,6 +5,7 @@ import { useBoardContext } from '../board/BoardContext';
 import { useImport } from './ImportContext';
 import { importFiles } from '../../assetPipeline/importAssets';
 import { useAssetUrl } from './useAssetUrl';
+import { RecordButton } from './RecordButton';
 
 const e = strings.editor;
 
@@ -246,6 +247,17 @@ function AffirmationRow({
           </span>
         )}
       </div>
+      <RecordButton onRecorded={(id) => onPatch({ audioAssetId: id })} />
+      {affirmation.audioAssetId && (
+        <button
+          type="button"
+          title={strings.common.remove}
+          className="rounded border border-text-muted/30 px-1.5 py-0.5 font-body text-[10px] text-text-muted hover:text-text"
+          onClick={() => onPatch({ audioAssetId: undefined })}
+        >
+          ♫ ✕
+        </button>
+      )}
       <button
         type="button"
         title={strings.common.delete}

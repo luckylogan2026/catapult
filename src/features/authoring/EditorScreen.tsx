@@ -24,6 +24,7 @@ import { useAsset } from './useAssetUrl';
 import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets';
 import { MasterAffirmationEditor } from './MasterAffirmationEditor';
 import { SettingsPanel } from '../settings/SettingsPanel';
+import { RecordButton } from './RecordButton';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
 import type { PlaylistId } from '../../domain/types';
 
@@ -474,6 +475,7 @@ function PageAudioControl({ page }: { page: PageT }) {
       >
         {asset ? e.pageAudioReplace : e.pageAudioAdd}
       </button>
+      <RecordButton onRecorded={(id) => mutate((b) => updatePage(b, page.id, { narrationAssetId: id }))} />
       {asset && (
         <>
           <label className="flex items-center gap-1">
