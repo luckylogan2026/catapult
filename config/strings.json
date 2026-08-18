@@ -358,6 +358,7 @@
     "keepLocal": "Keep this device",
     "keepRemote": "Keep Drive",
     "keepBoth": "Keep both",
-    "disconnect": "Disconnect"
+    "disconnect": "Disconnect",
+    "reconnectHint": "Session paused. Tap Sync now to reconnect."
   }
 }

@@ -27,6 +27,18 @@ const UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 let accessToken: string | null = null;
 let tokenExpiry = 0;
 
+// The token survives reloads for its roughly one hour of validity, in
+// the same private storage as the board itself. Without this, every
+// app open would flash a Google window at the user.
+async function loadStoredToken(): Promise<void> {
+  if (accessToken) return;
+  const stored = await kvGet<{ token: string; expiresAt: number }>('driveToken');
+  if (stored && Date.now() < stored.expiresAt - 60000) {
+    accessToken = stored.token;
+    tokenExpiry = performance.now() + (stored.expiresAt - Date.now());
+  }
+}
+
 type TokenClient = {
   requestAccessToken: (opts?: { prompt?: string }) => void;
   callback: (resp: { access_token?: string; expires_in?: number; error?: string }) => void;
@@ -63,10 +75,13 @@ async function loadGis(): Promise<void> {
   });
 }
 
-// Interactive on first connect; silent renewals afterwards while the
-// Google session lasts.
+// The Google window opens only for an interactive request, meaning a
+// deliberate tap. Background syncs use the stored token while it lasts
+// and simply skip when it has expired; they never open anything.
 export async function acquireToken(interactive: boolean): Promise<boolean> {
+  await loadStoredToken();
   if (accessToken && performance.now() < tokenExpiry - 60000) return true;
+  if (!interactive) return false;
   if (!clientIdConfigured()) return false;
   try {
     await loadGis();
@@ -80,17 +95,17 @@ export async function acquireToken(interactive: boolean): Promise<boolean> {
       callback: (resp) => {
         if (resp.access_token) {
           accessToken = resp.access_token;
-          tokenExpiry = performance.now() + (resp.expires_in ?? 3600) * 1000;
+          const expiresInMs = (resp.expires_in ?? 3600) * 1000;
+          tokenExpiry = performance.now() + expiresInMs;
           void kvSet('driveConnected', true);
+          void kvSet('driveToken', { token: resp.access_token, expiresAt: Date.now() + expiresInMs });
           resolve(true);
         } else {
           resolve(false);
         }
       },
     });
-    client.requestAccessToken({ prompt: interactive ? undefined : '' });
-    // A silent request that gets blocked never calls back; time it out.
-    if (!interactive) window.setTimeout(() => resolve(false), 8000);
+    client.requestAccessToken();
   });
 }
 

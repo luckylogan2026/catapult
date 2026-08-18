@@ -37,7 +37,7 @@ export function useSyncEngine() {
       busy.current = true;
       try {
         if (!(await acquireToken(interactive))) {
-          if (interactive) setStatus(y.statusError);
+          setStatus(interactive ? y.statusError : y.reconnectHint);
           return;
         }
         setConnected(true);
