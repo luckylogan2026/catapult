@@ -190,7 +190,7 @@ export type SyncOutcome =
 // revision this device synced: remote ahead only means pull, local ahead
 // only means push, both ahead means the conflict dialog and never a
 // silent overwrite.
-export async function syncOnce(board: Board): Promise<SyncOutcome> {
+export async function syncOnce(board: Board, forcePush = false): Promise<SyncOutcome> {
   try {
     const folderId = await findOrCreateFolder();
     const files = await listFolder(folderId);
@@ -204,6 +204,12 @@ export async function syncOnce(board: Board): Promise<SyncOutcome> {
 
     const localAhead = board.revision > lastSynced;
     const remoteAhead = !!remote && remote.revision > lastSynced;
+
+    if (forcePush) {
+      const uploaded = await pushBoard(board, folderId, files, boardFile?.id);
+      await kvSet('lastSyncedRevision', board.revision);
+      return { kind: 'pushed', assetsUploaded: uploaded };
+    }
 
     if (remote && remoteAhead && localAhead && remote.revision !== board.revision) {
       return {

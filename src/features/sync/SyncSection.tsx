@@ -45,8 +45,8 @@ export function useSyncEngine() {
         const outcome: SyncOutcome = await syncOnce(b);
         if (outcome.kind === 'pushed') setStatus(y.statusPushed);
         else if (outcome.kind === 'pulled') {
-          await adoptBoard(outcome.board);
-          await kvSet('lastSyncedRevision', outcome.board.revision + 1);
+          const stored = await adoptBoard(outcome.board);
+          await kvSet('lastSyncedRevision', stored.revision);
           setStatus(y.statusPulled);
         } else if (outcome.kind === 'conflict') {
           setConflict(outcome);
@@ -86,8 +86,12 @@ export function useSyncEngine() {
       if (!c || !b) return;
       setConflict(null);
       if (choice === 'remote') {
-        await adoptBoard(c.remoteBoard);
-        await kvSet('lastSyncedRevision', 0);
+        // The adopted board's stamped revision becomes the synced marker,
+        // so the next comparison sees both sides level.
+        const stored = await adoptBoard(c.remoteBoard);
+        await kvSet('lastSyncedRevision', stored.revision);
+        setStatus(y.statusPulled);
+        return;
       } else if (choice === 'both') {
         // Keep both: the local board stays, and divergent remote pages
         // come in as copies with a suffix.
@@ -108,14 +112,22 @@ export function useSyncEngine() {
             }),
           ],
         }));
-        await kvSet('lastSyncedRevision', 0);
-      } else {
-        // Keep local: force the next push by resetting the sync marker.
-        await kvSet('lastSyncedRevision', -1);
       }
-      void run(false);
+      // Keep local and keep both end with this device's board pushed up
+      // as the truth, skipping conflict detection once.
+      busy.current = true;
+      try {
+        setStatus(y.syncing);
+        const b2 = boardRef.current;
+        if (b2) {
+          const outcome = await syncOnce(b2, true);
+          setStatus(outcome.kind === 'pushed' ? y.statusPushed : y.statusError);
+        }
+      } finally {
+        busy.current = false;
+      }
     },
-    [conflict, adoptBoard, mutate, run],
+    [conflict, adoptBoard, mutate],
   );
 
   return { status, connected, conflict, resolveConflict, syncNow: () => run(true) };

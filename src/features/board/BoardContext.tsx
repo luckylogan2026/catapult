@@ -32,8 +32,8 @@ type BoardContextValue = {
   saveState: SaveState;
   /** Applies a pure producer, reconciles order lists, persists, autosaves. */
   mutate: (producer: (board: Board) => Board, opts?: { undoable?: boolean }) => void;
-  /** Installs a brand new board (first run only). */
-  adoptBoard: (board: Board) => Promise<void>;
+  /** Installs a replacement board and returns it as stamped. */
+  adoptBoard: (board: Board) => Promise<Board>;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -106,6 +106,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       boardRef.current = stamped;
       await persistBoard(stamped);
       setBoard(stamped);
+      return stamped;
     },
     [],
   );
