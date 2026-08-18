@@ -83,9 +83,6 @@
     "pageAudioLabel": "Audio",
     "pageAudioAdd": "Add audio",
     "pageAudioReplace": "Replace audio",
-    "masterAffirmationAdd": "Add master affirmation",
-    "masterAffirmationTextLabel": "Declaration",
-    "masterAffirmationAudio": "Audio",
     "chapterAddText": "Text chapter",
     "backgroundLabel": "Background",
     "bulletList": "Bullets",
@@ -265,13 +262,6 @@
       "name": "Free Canvas",
       "description": "An empty page. Place anything anywhere.",
       "slots": {}
-    },
-    "master-affirmations": {
-      "name": "Master Affirmations",
-      "description": "Longer declarations, paragraph length, each with optional recorded audio.",
-      "slots": {
-        "title": "Master Affirmations"
-      }
     }
   },
   "templates": {

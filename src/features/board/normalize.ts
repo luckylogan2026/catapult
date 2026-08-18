@@ -6,9 +6,16 @@ import { strings } from '../../config';
 // existing board whole against the current registry: any text slot
 // without a block gets an empty one, so nothing renders as a dead hole
 // and typing works immediately. Media slots stay empty by design.
+// Page types withdrawn from the product. Pages of these types drop out
+// of existing boards on load; the affirmations intro carries the master
+// affirmations role now.
+const RETIRED_TYPES = new Set(['master-affirmations']);
+
 export function ensureTemplateBlocks(board: Board): Board {
   let changed = false;
-  const pages = board.pages.map((page) => {
+  const kept = board.pages.filter((p) => !RETIRED_TYPES.has(p.type));
+  if (kept.length !== board.pages.length) changed = true;
+  const pages = kept.map((page) => {
     const def = getPageTypeDef(page.type);
     const template = getTemplate(def, page.templateId);
     // A stale template id falls back to the first arrangement; persist

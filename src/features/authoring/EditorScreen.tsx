@@ -22,7 +22,6 @@ import type { SnapLines } from './CanvasBlockFrame';
 import { fontChoices } from '../../theme/fontChoices';
 import { useAsset } from './useAssetUrl';
 import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets';
-import { MasterAffirmationEditor } from './MasterAffirmationEditor';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { RecordButton } from './RecordButton';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
@@ -340,10 +339,6 @@ function EditorInner() {
               {def.authoring === 'affirmation-list' ? (
                 <div className="min-h-0 grow overflow-y-auto">
                   <AffirmationEditor />
-                </div>
-              ) : def.authoring === 'master-affirmation-list' ? (
-                <div className="min-h-0 grow overflow-y-auto">
-                  <MasterAffirmationEditor />
                 </div>
               ) : (
                 <ScaledCanvas

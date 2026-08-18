@@ -14,7 +14,6 @@ import { profile } from './templates/profile';
 import { goals } from './templates/goals';
 import { affirmationsIntro } from './templates/affirmationsIntro';
 import { affirmations } from './templates/affirmations';
-import { masterAffirmations } from './templates/masterAffirmations';
 import { aspProcess } from './templates/aspProcess';
 import { freeCanvas } from './templates/freeCanvas';
 
@@ -34,7 +33,6 @@ export const pageTypeRegistry: PageTypeDef[] = [
   goals,
   affirmationsIntro,
   affirmations,
-  masterAffirmations,
   aspProcess,
   freeCanvas,
 ];
