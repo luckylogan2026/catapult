@@ -92,6 +92,10 @@ export type Page = {
   templateId: string;
   blocks: Block[];
   narrationAssetId?: string;
+  /** Page audio loops until the page is left. Defaults off, plays once. */
+  audioLoop?: boolean;
+  /** Page audio starts with the page, or waits for a tap. */
+  audioStart?: 'auto' | 'tap';
   dwellSeconds?: number;
   include: PageInclude;
   /**

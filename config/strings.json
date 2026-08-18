@@ -92,7 +92,10 @@
     "numberList": "Numbers",
     "dragToReposition": "Drag the picture to position it in its frame.",
     "fitFill": "Fill",
-    "fitContain": "Fit"
+    "fitContain": "Fit",
+    "audioLoop": "Loop",
+    "audioStartAuto": "Starts with the page",
+    "audioStartTap": "Play on tap"
   },
   "import": {
     "dropHere": "Drop images or video here",

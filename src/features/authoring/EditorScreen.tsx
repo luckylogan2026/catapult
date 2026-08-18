@@ -386,13 +386,34 @@ function PageAudioControl({ page }: { page: PageT }) {
         {asset ? e.pageAudioReplace : e.pageAudioAdd}
       </button>
       {asset && (
-        <button
-          type="button"
-          className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
-          onClick={() => mutate((b) => updatePage(b, page.id, { narrationAssetId: undefined }))}
-        >
-          {strings.common.remove}
-        </button>
+        <>
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={page.audioLoop ?? false}
+              onChange={(ev) => mutate((b) => updatePage(b, page.id, { audioLoop: ev.target.checked }))}
+              className="h-3 w-3 accent-[var(--tc-primary)]"
+            />
+            {e.audioLoop}
+          </label>
+          <select
+            value={page.audioStart ?? 'auto'}
+            onChange={(ev) =>
+              mutate((b) => updatePage(b, page.id, { audioStart: ev.target.value as 'auto' | 'tap' }))
+            }
+            className="rounded border border-text-muted/30 bg-background px-1 py-0.5 font-body text-xs text-text"
+          >
+            <option value="auto">{e.audioStartAuto}</option>
+            <option value="tap">{e.audioStartTap}</option>
+          </select>
+          <button
+            type="button"
+            className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
+            onClick={() => mutate((b) => updatePage(b, page.id, { narrationAssetId: undefined }))}
+          >
+            {strings.common.remove}
+          </button>
+        </>
       )}
       <input
         ref={fileRef}
