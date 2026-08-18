@@ -329,5 +329,14 @@
     "empty": "Nothing to play yet. Add pages and include them in this playlist.",
     "paused": "Paused",
     "playAudio": "Play audio"
+  },
+  "completion": {
+    "title": "Done for today",
+    "streakLabel": "day streak",
+    "morningShort": "Morning",
+    "eveningShort": "Evening",
+    "notePlaceholder": "One line about today",
+    "dictateStart": "Speak instead",
+    "dictateStop": "Stop listening"
   }
 }

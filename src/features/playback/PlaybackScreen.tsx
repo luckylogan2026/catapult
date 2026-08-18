@@ -7,6 +7,7 @@ import { ensureBackdrops } from '../../lib/backdrop';
 import { buildScreens, drawAffirmations, screenKey, type Screen } from './screens';
 import { ScreenView } from './ScreenView';
 import { useScreenAudio } from './useScreenAudio';
+import { CompletionScreen } from './CompletionScreen';
 import { useSessionAudio } from './useSessionAudio';
 
 const p = strings.playback;
@@ -37,6 +38,7 @@ export function PlaybackScreen({
   const [fadeFrom, setFadeFrom] = useState<number | null>(null);
   const fadeTimer = useRef<number | undefined>(undefined);
   const [chrome, setChrome] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,6 +105,10 @@ export function PlaybackScreen({
   const goTo = useCallback(
     (next: number, mode: 'slide' | 'fade' = 'fade') => {
       if (!count) return;
+      if (next >= count) {
+        setCompleted(true);
+        return;
+      }
       const clamped = Math.max(0, Math.min(count - 1, next));
       setIndex((prev) => {
         if (clamped !== prev && mode === 'fade') {
@@ -197,10 +203,9 @@ export function PlaybackScreen({
     }
     d.lastX = ev.clientX;
     d.lastT = performance.now();
-    // Rubber-band past the ends rather than dead-stopping.
+    // Rubber-band at the start; the end commits to the completion screen.
     const atStart = index === 0 && dx > 0;
-    const atEnd = index === count - 1 && dx < 0;
-    setDragX(atStart || atEnd ? dx * 0.3 : dx);
+    setDragX(atStart ? dx * 0.3 : dx);
   };
 
   const onPointerUp = (ev: React.PointerEvent) => {
@@ -297,6 +302,16 @@ export function PlaybackScreen({
           </div>
         );
       })}
+
+      {completed && (
+        <CompletionScreen
+          playlistId={playlistId}
+          onClose={() => {
+            stop();
+            onExit();
+          }}
+        />
+      )}
 
       {/* Tap-to-start page audio */}
       {pendingTap && (
