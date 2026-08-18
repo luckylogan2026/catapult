@@ -1,0 +1,35 @@
+{
+  "pages": [
+    { "type": "cover" },
+    { "type": "instructions" },
+    { "type": "principles" },
+    { "type": "daily-ritual" },
+    { "type": "vision-board" },
+    { "type": "vision-board" },
+    { "type": "chapters" },
+    { "type": "legacy" },
+    { "type": "manifesto" },
+    { "type": "profile" },
+    { "type": "goals" },
+    { "type": "affirmations-intro" },
+    { "type": "affirmations" },
+    { "type": "asp-process" }
+  ],
+  "affirmations": [
+    "I am calm, clear, and present.",
+    "I keep the promises I make to myself.",
+    "I do the difficult thing first.",
+    "My attention goes where I direct it.",
+    "I am building a life I am proud of.",
+    "I speak to myself with respect.",
+    "I am patient with the process and relentless in the practice.",
+    "My body is strong and my mind is rested.",
+    "I choose what matters over what is urgent.",
+    "I am generous with the people I love.",
+    "Money flows to me because I create real value.",
+    "I finish what I begin.",
+    "Every morning I return to this practice.",
+    "I let go of what I cannot control.",
+    "I am becoming the person I describe here."
+  ]
+}

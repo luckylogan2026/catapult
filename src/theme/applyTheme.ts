@@ -26,3 +26,13 @@ export function applyBrandDefaultTheme(): void {
   const preset = getPreset(brand.defaultThemePreset);
   applyTheme({ ...preset.colors, ...brand.palette }, { ...preset.fonts, ...brand.fonts });
 }
+
+// Applies a board's theme: its preset with any editor overrides on top.
+export function applyBoardTheme(theme: {
+  presetId: string;
+  colors?: Partial<ThemeColors>;
+  fonts?: Partial<ThemeFonts>;
+}): void {
+  const preset = getPreset(theme.presetId);
+  applyTheme({ ...preset.colors, ...theme.colors }, { ...preset.fonts, ...theme.fonts });
+}
