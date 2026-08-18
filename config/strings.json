@@ -4,5 +4,212 @@
     "phaseNote": "The board editor arrives in the next phase.",
     "offlineReady": "Ready to work offline.",
     "updateAvailable": "A new version is ready. Reload to update."
+  },
+  "common": {
+    "saved": "Saved",
+    "saving": "Saving",
+    "undo": "Undo",
+    "redo": "Redo",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "cancel": "Cancel",
+    "add": "Add",
+    "done": "Done",
+    "back": "Back",
+    "remove": "Remove",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "close": "Close"
+  },
+  "setup": {
+    "welcomeTitle": "Welcome",
+    "welcomeBody": "This is a private board you will read every morning and every night. Everything you put here stays on this device.",
+    "nameLabel": "Your name",
+    "titleLabel": "Workbook title",
+    "titleDefault": "My Workbook",
+    "themeLabel": "Theme",
+    "startLabel": "How would you like to begin",
+    "startTemplate": "Start from the guided template",
+    "startTemplateHint": "Every page type, with prompts to guide you. Remove what you do not need.",
+    "startEmpty": "Start empty",
+    "startEmptyHint": "A blank board. Add pages as you go.",
+    "begin": "Begin"
+  },
+  "editor": {
+    "addPage": "Add page",
+    "pageRail": "Pages",
+    "deletePage": "Delete page",
+    "deletedPageUndo": "Page deleted. Undo with Ctrl+Z.",
+    "duplicatePage": "Duplicate page",
+    "pageTitleLabel": "Page title",
+    "pageSubtitleLabel": "Keywords",
+    "templateLabel": "Arrangement",
+    "layoutTemplate": "Template",
+    "layoutCanvas": "Canvas",
+    "unlockCanvas": "Unlock canvas",
+    "relockTemplate": "Return to template",
+    "relockWarning": "Returning to the template re-snaps every block to its slot. Continue?",
+    "includeIn": "Appears in",
+    "includeMorning": "Morning",
+    "includeEvening": "Evening",
+    "includePdf": "PDF",
+    "includeHtml": "HTML",
+    "emptyBoardTitle": "No pages yet",
+    "emptyBoardBody": "Add your first page to begin.",
+    "addItem": "Add item",
+    "removeItem": "Remove item",
+    "outputOrder": "Output order",
+    "settings": "Settings",
+    "focalHint": "Drag inside the frame to set the focal point.",
+    "textPlaceholder": "Write here",
+    "chapterPast": "Past",
+    "chapterFuture": "Future",
+    "chapterAchieved": "Achieved",
+    "mirrorToLegacy": "Add this chapter to your Legacy page?",
+    "affirmationListTitle": "Affirmations",
+    "affirmationAdd": "Add affirmation",
+    "affirmationTextLabel": "Affirmation",
+    "affirmationEmotionLabel": "Emotion",
+    "affirmationActive": "Active",
+    "affirmationClearExamples": "Remove all example affirmations",
+    "affirmationExampleTag": "Example"
+  },
+  "import": {
+    "dropHere": "Drop images or video here",
+    "addMedia": "Add media",
+    "fromFiles": "Choose files",
+    "fromCamera": "From camera roll",
+    "fromUrl": "Paste a link",
+    "urlPrompt": "Paste an image or video address",
+    "pasteHint": "You can also paste an image from the clipboard.",
+    "importing": "Importing",
+    "largeFileWarning": "This file is very large. Large videos slow the morning ritual and use device storage quickly.",
+    "unsupportedType": "That file type is not supported here.",
+    "urlFailed": "That address could not be loaded."
+  },
+  "order": {
+    "title": "Output order",
+    "targetMorning": "Morning",
+    "targetEvening": "Evening",
+    "targetPdf": "PDF",
+    "targetHtml": "HTML",
+    "linkedToMorning": "Follows the Morning order",
+    "unlink": "Set its own order",
+    "relink": "Follow the Morning order again",
+    "excluded": "Not included",
+    "includeToggle": "Included",
+    "empty": "No pages on this board yet."
+  },
+  "pageTypes": {
+    "cover": {
+      "name": "Cover",
+      "description": "Your name, the workbook title, and one full-bleed image or video.",
+      "slots": {
+        "background": "Background image or video",
+        "title": "Workbook title",
+        "owner": "Your name",
+        "version": "Version"
+      }
+    },
+    "instructions": {
+      "name": "Instructions",
+      "description": "How to use this board, in your own words.",
+      "slots": {
+        "title": "Instructions",
+        "dateCreated": "Date created",
+        "body": "Describe how you will use this board, morning and night."
+      }
+    },
+    "principles": {
+      "name": "Principles",
+      "description": "Up to nine numbered principles, a heading and a paragraph each.",
+      "slots": { "title": "Principles", "subtitle": "Keywords" }
+    },
+    "daily-ritual": {
+      "name": "Daily Ritual",
+      "description": "Short numbered steps for the daily practice.",
+      "slots": { "title": "Daily Ritual", "subtitle": "Keywords" }
+    },
+    "vision-board": {
+      "name": "Vision Board",
+      "description": "A headline, keywords, and a mosaic of images or video.",
+      "slots": { "title": "Vision", "keywords": "Comma separated keywords", "cell": "Image or video" }
+    },
+    "legacy": {
+      "name": "Legacy",
+      "description": "The same mosaic, written in the past tense. Achieved chapters gather here.",
+      "slots": { "title": "Legacy", "keywords": "Comma separated keywords", "cell": "Image or video" }
+    },
+    "chapters": {
+      "name": "Chapters",
+      "description": "A grid of life chapters, each with an image, a caption, and a status.",
+      "slots": { "title": "Chapters", "subtitle": "Keywords", "tile": "Chapter" }
+    },
+    "manifesto": {
+      "name": "Manifesto",
+      "description": "Long-form prose about the person you are becoming, written in the third person.",
+      "slots": {
+        "title": "Manifesto",
+        "body": "Write about this person in the third person, present tense, as if it is already true."
+      }
+    },
+    "profile": {
+      "name": "Profile",
+      "description": "Character traits, style, routine, and mentors.",
+      "slots": {
+        "title": "Profile",
+        "traits": "Character traits",
+        "style": "Style",
+        "routine": "Routine",
+        "mentors": "Mentors"
+      }
+    },
+    "goals": {
+      "name": "Goals",
+      "description": "Numbered goals under headings you define.",
+      "slots": { "title": "Goals", "subtitle": "Keywords" }
+    },
+    "affirmations-intro": {
+      "name": "Affirmations Intro",
+      "description": "The framing page: thought plus image plus emotion, and your personal cue.",
+      "slots": {
+        "title": "Affirmations",
+        "subtitle": "Keywords",
+        "body": "Each affirmation pairs a thought with an image and an emotion. Read each one aloud, look at its image, and let the feeling arrive before moving on."
+      }
+    },
+    "affirmations": {
+      "name": "Affirmations",
+      "description": "Your affirmation list. In playback, each one gets its own screen.",
+      "slots": { "title": "Affirmations", "subtitle": "Keywords" }
+    },
+    "asp-process": {
+      "name": "ASP Process",
+      "description": "A guided sequence with timed pauses.",
+      "slots": {
+        "title": "ASP Process",
+        "subtitle": "Keywords",
+        "body": "Write the steps of your process. Insert [pause] wherever a silence belongs."
+      }
+    },
+    "free-canvas": {
+      "name": "Free Canvas",
+      "description": "An empty page. Place anything anywhere.",
+      "slots": {}
+    }
+  },
+  "templates": {
+    "fullBleed": "Full bleed",
+    "prose": "Prose",
+    "numbered": "Numbered",
+    "steps": "Steps",
+    "mosaicThree": "Three cells",
+    "mosaicFive": "Five cells",
+    "mosaicEight": "Eight cells",
+    "gridNine": "Nine tiles",
+    "quadrants": "Four sections",
+    "categories": "Categories",
+    "list": "List",
+    "blank": "Blank"
   }
 }
