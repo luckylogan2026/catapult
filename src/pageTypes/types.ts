@@ -13,6 +13,8 @@ export type SlotDef = {
   /** strings.json key under pageTypes.<type>.slots for the empty prompt. */
   promptKey?: string;
   textStyle?: Block['style'];
+  /** Prefill the block with the prompt text instead of a placeholder. */
+  prefill?: boolean;
   /** Chapter tiles carry status and caption. */
   chapterTile?: boolean;
 };

@@ -146,12 +146,16 @@ function EditorInner() {
                   onChange={(ev) => mutate((b) => updatePage(b, page.id, { title: ev.target.value }))}
                   className="w-48 rounded border border-transparent bg-transparent px-1 font-body text-sm text-text outline-none focus:border-text-muted/30"
                 />
-                <input
-                  value={page.subtitle}
-                  placeholder={e.pageSubtitleLabel}
-                  onChange={(ev) => mutate((b) => updatePage(b, page.id, { subtitle: ev.target.value }))}
-                  className="w-48 rounded border border-transparent bg-transparent px-1 font-body text-xs text-text-muted outline-none focus:border-text-muted/30"
-                />
+                {getPageTypeDef(page.type)
+                  .templates.find((t) => t.id === page.templateId)
+                  ?.slots.some((sl) => sl.id === 'subtitle') && (
+                  <input
+                    value={page.subtitle}
+                    placeholder={e.pageSubtitleLabel}
+                    onChange={(ev) => mutate((b) => updatePage(b, page.id, { subtitle: ev.target.value }))}
+                    className="w-48 rounded border border-transparent bg-transparent px-1 font-body text-xs text-text-muted outline-none focus:border-text-muted/30"
+                  />
+                )}
                 {def.templates.length > 1 && (
                   <select
                     value={page.templateId}

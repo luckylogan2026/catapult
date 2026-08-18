@@ -1,4 +1,5 @@
 import type { Page, PageType, Block } from '../domain/types';
+import { strings } from '../config';
 import { defaultInclude } from '../db/boardRepo';
 import type { PageTypeDef, TemplateDef } from './types';
 import { cover } from './templates/cover';
@@ -48,6 +49,14 @@ export function getTemplate(def: PageTypeDef, templateId: string): TemplateDef {
   return def.templates.find((t) => t.id === templateId) ?? def.templates[0];
 }
 
+type SlotStrings = Record<string, { slots?: Record<string, string> }>;
+
+/** The prompt copy for a slot, from strings.json. */
+export function slotPrompt(type: PageType, promptKey?: string): string {
+  if (!promptKey) return '';
+  return (strings.pageTypes as SlotStrings)[type]?.slots?.[promptKey] ?? '';
+}
+
 // A fresh page of a type: text slots become empty editable blocks, media
 // slots stay empty until the user drops content in.
 export function createPage(type: PageType, title: string): Page {
@@ -57,9 +66,9 @@ export function createPage(type: PageType, title: string): Page {
     .filter((s) => s.kind === 'text')
     .map((s, i) => ({
       id: crypto.randomUUID(),
-      kind: 'text',
+      kind: 'text' as const,
       slotId: s.id,
-      text: '',
+      text: s.prefill ? slotPrompt(type, s.promptKey) : '',
       rect: { ...s.rect },
       z: i + 1,
       style: s.textStyle,

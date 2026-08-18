@@ -84,7 +84,8 @@
     "pageAudioReplace": "Replace audio",
     "masterAffirmationAdd": "Add master affirmation",
     "masterAffirmationTextLabel": "Declaration",
-    "masterAffirmationAudio": "Audio"
+    "masterAffirmationAudio": "Audio",
+    "chapterAddText": "Text chapter"
   },
   "import": {
     "dropHere": "Drop images or video here",
@@ -137,7 +138,6 @@
       "description": "Your numbered principles as one pasted text that fills the page.",
       "slots": {
         "title": "Principles",
-        "subtitle": "Keywords",
         "body": "Type or paste your principles here. Numbered lines and bullet lines format automatically."
       }
     },
@@ -146,7 +146,6 @@
       "description": "The steps of your daily practice as one pasted text.",
       "slots": {
         "title": "Daily Ritual",
-        "subtitle": "Keywords",
         "body": "Type or paste your ritual steps here."
       }
     },
@@ -155,7 +154,6 @@
       "description": "A headline, keywords, and a mosaic of images or video.",
       "slots": {
         "title": "Vision",
-        "keywords": "Comma separated keywords",
         "cell": "Image or video"
       }
     },
@@ -164,15 +162,14 @@
       "description": "The same mosaic, written in the past tense. Achieved chapters gather here.",
       "slots": {
         "title": "Legacy",
-        "keywords": "Comma separated keywords",
         "cell": "Image or video"
       }
     },
     "chapters": {
-      "name": "Chapters",
-      "description": "A grid of life chapters, each with an image, a caption, and a status.",
+      "name": "My Story",
+      "description": "A grid of life chapters, past or future. Each tile is an image, a video, or plain text, with a caption and a status.",
       "slots": {
-        "title": "Chapters",
+        "title": "My Story",
         "subtitle": "Keywords",
         "tile": "Chapter"
       }
@@ -191,9 +188,13 @@
       "slots": {
         "title": "Profile",
         "traits": "Character traits",
+        "traitsBody": "The traits of the person you are becoming.",
         "style": "Style",
+        "styleBody": "How this person dresses and carries themselves.",
         "routine": "Routine",
-        "mentors": "Mentors"
+        "routineBody": "The shape of this person’s day.",
+        "mentors": "Mentors",
+        "mentorsBody": "Who this person learns from."
       }
     },
     "goals": {
@@ -201,17 +202,17 @@
       "description": "Category headings and numbered goals as one pasted text.",
       "slots": {
         "title": "Goals",
-        "subtitle": "Keywords",
         "body": "Type or paste your goals here, with a heading line above each category."
       }
     },
     "affirmations-intro": {
       "name": "Affirmations Intro",
-      "description": "The framing page: thought plus image plus emotion, and your personal cue.",
+      "description": "The framing page with its own background, which also backs each affirmation screen in playback.",
       "slots": {
         "title": "Affirmations",
         "subtitle": "Keywords",
-        "body": "Each affirmation pairs a thought with an image and an emotion. Read each one aloud, look at its image, and let the feeling arrive before moving on."
+        "body": "Each affirmation pairs a thought with an image and an emotion. Read each one aloud, look at its image, and let the feeling arrive before moving on.",
+        "background": "Background image or video"
       }
     },
     "affirmations": {
@@ -247,10 +248,8 @@
     }
   },
   "templates": {
-    "fullBleed": "Full bleed",
     "prose": "Prose",
     "gridNine": "Nine tiles",
-    "quadrants": "Four sections",
     "list": "List",
     "blank": "Blank",
     "cellsOne": "One picture",
@@ -258,7 +257,11 @@
     "cellsThree": "Three pictures",
     "cellsFour": "Four pictures",
     "cellsFive": "Five pictures",
-    "cellsSix": "Six pictures"
+    "cellsSix": "Six pictures",
+    "titleMiddle": "Title centered",
+    "titleTop": "Title at top",
+    "titleBottom": "Title at bottom",
+    "sections": "Four sections"
   },
   "settings": {
     "title": "Settings",

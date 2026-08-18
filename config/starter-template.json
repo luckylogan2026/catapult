@@ -22,7 +22,12 @@
       "type": "vision-board"
     },
     {
-      "type": "chapters"
+      "type": "chapters",
+      "title": "My Story (past)"
+    },
+    {
+      "type": "chapters",
+      "title": "My Story (future)"
     },
     {
       "type": "legacy"

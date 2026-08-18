@@ -1,5 +1,6 @@
 import type { Block, Board } from '../../domain/types';
-import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
+import { getPageTypeDef, getTemplate, slotPrompt } from '../../pageTypes/registry';
+import { strings } from '../../config';
 
 // Template definitions evolve between app versions. This makes an
 // existing board whole against the current registry: any text slot
@@ -16,19 +17,28 @@ export function ensureTemplateBlocks(board: Board): Board {
     const missing = template.slots.filter(
       (s) => s.kind === 'text' && !page.blocks.some((b) => b.slotId === s.id),
     );
-    if (!missing.length && templateId === page.templateId) return page;
+    // One-time rename: boards made before the Meditation naming keep the
+    // old ASP title in their page record.
+    const names = strings.pageTypes as Record<string, { name: string }>;
+    const title =
+      page.type === 'asp-process' && page.title === 'ASP Process'
+        ? names['asp-process'].name
+        : page.type === 'chapters' && page.title === 'Chapters'
+          ? names['chapters'].name
+          : page.title;
+    if (!missing.length && templateId === page.templateId && title === page.title) return page;
     changed = true;
     const maxZ = Math.max(0, ...page.blocks.map((b) => b.z));
     const added: Block[] = missing.map((s, i) => ({
       id: crypto.randomUUID(),
       kind: 'text',
       slotId: s.id,
-      text: '',
+      text: s.prefill ? slotPrompt(page.type, s.promptKey) : '',
       rect: { ...s.rect },
       z: maxZ + i + 1,
       style: s.textStyle,
     }));
-    return { ...page, templateId, blocks: [...page.blocks, ...added] };
+    return { ...page, templateId, title, blocks: [...page.blocks, ...added] };
   });
   return changed ? { ...board, pages } : board;
 }

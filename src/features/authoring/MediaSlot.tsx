@@ -19,6 +19,7 @@ export function MediaSlot({
   selected,
   onSelect,
   onSwap,
+  onCreateEmpty,
   variant,
 }: {
   page: Page;
@@ -28,6 +29,7 @@ export function MediaSlot({
   selected: boolean;
   onSelect: () => void;
   onSwap: (fromBlockId: string, toSlotId: string) => void;
+  onCreateEmpty?: () => void;
   variant: 'canvas' | 'thumb';
 }) {
   const { importFilesTo, importUrlTo } = useImport();
@@ -50,6 +52,8 @@ export function MediaSlot({
     if (files.length) void importFilesTo(files, target);
   };
 
+  const textTile = slot.chapterTile && !!block && !block.assetId && !!block.caption?.trim();
+
   if (variant === 'thumb') {
     return (
       <div className="absolute overflow-hidden" style={rectCss(slot)}>
@@ -57,6 +61,11 @@ export function MediaSlot({
           <div className="relative h-full w-full">
             <MediaContent block={block} variant="thumb" />
             {slot.chapterTile && <ChapterOverlay block={block} />}
+          </div>
+        ) : textTile && block ? (
+          <div className="relative h-full w-full">
+            <TextTile block={block} />
+            <ChapterOverlay block={block} captionShown />
           </div>
         ) : (
           <div className="h-full w-full border border-dashed border-text-muted/25" />
@@ -94,18 +103,43 @@ export function MediaSlot({
           <MediaContent block={block} variant="canvas" />
           {slot.chapterTile && <ChapterOverlay block={block} />}
         </div>
-      ) : (
+      ) : textTile && block ? (
+        <div className="relative h-full w-full">
+          <TextTile block={block} />
+          <ChapterOverlay block={block} captionShown />
+        </div>
+      ) : block && slot.chapterTile ? (
+        // A chapter block exists but has neither media nor caption yet:
+        // keep it selected so the inspector offers caption and status,
+        // while the tile still accepts media.
         <button
           type="button"
           className="flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed border-text-muted/40 bg-surface/40 p-3 text-center"
           onClick={(e) => {
             e.stopPropagation();
             onSelect();
-            fileRef.current?.click();
           }}
         >
           <span className="font-body text-[26px] text-text-muted">{prompt}</span>
           <span className="font-body text-[20px] text-text-muted/70">{strings.import.dropHere}</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed border-text-muted/40 bg-surface/40 p-3 text-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (slot.chapterTile) onCreateEmpty?.();
+            else {
+              onSelect();
+              fileRef.current?.click();
+            }
+          }}
+        >
+          <span className="font-body text-[26px] text-text-muted">{prompt}</span>
+          <span className="font-body text-[20px] text-text-muted/70">
+            {slot.chapterTile ? strings.editor.chapterAddText : strings.import.dropHere}
+          </span>
         </button>
       )}
 
@@ -166,13 +200,22 @@ function SlotButton({ label, onClick }: { label: string; onClick: () => void }) 
   );
 }
 
+// A caption-only chapter: the caption becomes the tile itself.
+function TextTile({ block }: { block: Block }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center border border-text-muted/30 bg-surface/70 p-3 text-center">
+      <span className="font-heading text-[30px] leading-snug text-text">{block.caption}</span>
+    </div>
+  );
+}
+
 // Chapter tiles carry a caption bar and a status treatment. Achieved
 // tiles get the gold ring and mark; the rest stay quiet.
-function ChapterOverlay({ block }: { block: Block }) {
+function ChapterOverlay({ block, captionShown }: { block: Block; captionShown?: boolean }) {
   const status = block.chapter?.status;
   return (
     <>
-      {block.caption && (
+      {block.caption && !captionShown && (
         <div className="absolute inset-x-0 bottom-0 bg-black/55 px-2 py-1 font-body text-[22px] leading-tight text-white">
           {block.caption}
         </div>

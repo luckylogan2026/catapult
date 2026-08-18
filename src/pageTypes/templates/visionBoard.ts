@@ -1,8 +1,8 @@
 import type { BlockRect } from '../../domain/types';
-import { CONTENT_W, MARGIN, SUBTITLE_H, SUBTITLE_Y, subtitleSlot, titleSlot } from '../geometry';
+import { CONTENT_W, MARGIN, TITLE_H, TITLE_Y, titleSlot } from '../geometry';
 import type { PageTypeDef, SlotDef, TemplateDef } from '../types';
 
-const TOP = SUBTITLE_Y + SUBTITLE_H + 40;
+const TOP = TITLE_Y + TITLE_H + 40;
 const BOTTOM = 1650 - MARGIN;
 const H = BOTTOM - TOP;
 const GAP = 18;
@@ -18,7 +18,7 @@ function arrangement(id: string, nameKey: string, cells: BlockRect[]): TemplateD
   return {
     id,
     nameKey,
-    slots: [titleSlot(), subtitleSlot('keywords'), ...cells.map((r, i) => cell(`cell-${i + 1}`, r))],
+    slots: [titleSlot(), ...cells.map((r, i) => cell(`cell-${i + 1}`, r))],
   };
 }
 

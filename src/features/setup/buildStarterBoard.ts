@@ -13,8 +13,8 @@ export function buildStarterBoard(ownerName: string, title: string, presetId: st
   const board = createBoard(ownerName, title, presetId);
   const names = strings.pageTypes as PageTypeStrings;
 
-  board.pages = (starter.pages as { type: PageType }[]).map(({ type }) =>
-    createPage(type, names[type]?.name ?? type),
+  board.pages = (starter.pages as { type: PageType; title?: string }[]).map(({ type, title }) =>
+    createPage(type, title ?? names[type]?.name ?? type),
   );
 
   // Prefill the cover from setup so the first open is not a blank page.

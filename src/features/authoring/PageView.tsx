@@ -149,6 +149,31 @@ export function PageView({
                 selected={interactive && !!block && selectedBlockId === block.id}
                 onSelect={() => block && onSelectBlock?.(block.id)}
                 onSwap={(fromId, toSlot) => mutate((b) => swapSlots(b, page.id, fromId, toSlot))}
+                onCreateEmpty={() => {
+                  const id = crypto.randomUUID();
+                  mutate((b) => ({
+                    ...b,
+                    pages: b.pages.map((p) =>
+                      p.id === page.id
+                        ? {
+                            ...p,
+                            blocks: [
+                              ...p.blocks,
+                              {
+                                id,
+                                kind: 'image' as const,
+                                slotId: slot.id,
+                                rect: { ...slot.rect },
+                                z: template.slots.findIndex((s) => s.id === slot.id),
+                                chapter: { status: 'future' as const },
+                              },
+                            ],
+                          }
+                        : p,
+                    ),
+                  }));
+                  onSelectBlock?.(id);
+                }}
                 variant={variant}
               />
             );
