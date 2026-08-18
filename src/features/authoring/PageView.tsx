@@ -183,7 +183,7 @@ export function PageView({
           return (
             <div
               key={slot.id}
-              className="absolute"
+              className={`absolute ${interactive ? 'overflow-y-auto' : 'overflow-hidden'}`}
               style={{
                 left: slot.rect.x,
                 top: slot.rect.y,
