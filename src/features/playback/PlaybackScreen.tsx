@@ -272,7 +272,8 @@ export function PlaybackScreen({
             <ScreenView
               board={board}
               screen={s}
-              paused={i !== index || paused}
+              active={i === index}
+              paused={paused}
               onRollEnd={i === index && autoAdvance && !paused ? () => advance() : undefined}
             />
           </div>

@@ -77,11 +77,13 @@ function FullBleedMedia({ block }: { block: Block }) {
 export function ScreenView({
   board,
   screen,
+  active = true,
   paused = false,
   onRollEnd,
 }: {
   board: Board;
   screen: Screen;
+  active?: boolean;
   paused?: boolean;
   onRollEnd?: () => void;
 }) {
@@ -94,7 +96,7 @@ export function ScreenView({
             <Backdrop screen={screen} />
             {bg && <FullBleedMedia block={bg} />}
             {bg && <div className="absolute inset-0 bg-black/45" />}
-            <Teleprompter speed={screen.page.rollSpeed} paused={paused} onEnd={onRollEnd}>
+            <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd}>
               <TextFlowContent page={screen.page} />
             </Teleprompter>
           </div>
@@ -172,7 +174,7 @@ export function ScreenView({
         <Backdrop screen={screen} />
         {introBg && <FullBleedMedia block={introBg} />}
         {introBg && <div className="absolute inset-0 bg-black/40" />}
-        <Teleprompter speed={screen.page.rollSpeed} paused={paused} onEnd={onRollEnd}>
+        <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd}>
           <div className="flex flex-col items-center gap-14">
           {screen.list.map((a) => (
             <div key={a.id} className="flex flex-col items-center gap-2">

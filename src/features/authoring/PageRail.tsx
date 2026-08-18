@@ -71,8 +71,8 @@ export function PageRail({
         <div
           className={
             wide
-              ? 'flex h-full w-44 flex-col gap-2 overflow-y-auto border-r border-text-muted/15 bg-surface/40 p-2'
-              : 'flex w-full flex-row gap-2 overflow-x-auto border-b border-text-muted/15 bg-surface/40 p-2'
+              ? 'flex h-full w-44 shrink-0 flex-col gap-2 overflow-y-auto border-r border-text-muted/15 bg-surface/40 p-2'
+              : 'flex w-full shrink-0 flex-row gap-2 overflow-x-auto border-b border-text-muted/15 bg-surface/40 p-2'
           }
         >
           {board.pages.map((page) => (
