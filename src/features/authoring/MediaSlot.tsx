@@ -33,7 +33,7 @@ export function MediaSlot({
   onSwap: (fromBlockId: string, toSlotId: string) => void;
   onCreateEmpty?: () => void;
   onPatch: (patch: Partial<Block>) => void;
-  variant: 'canvas' | 'thumb';
+  variant: 'canvas' | 'thumb' | 'play';
 }) {
   const { importFilesTo, importUrlTo } = useImport();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -58,12 +58,16 @@ export function MediaSlot({
 
   const textTile = slot.chapterTile && !!block && !block.assetId && !!block.caption?.trim();
 
-  if (variant === 'thumb') {
+  if (variant === 'thumb' || variant === 'play') {
     return (
       <div className="absolute overflow-hidden" style={rectCss(slot)}>
         {filled && block ? (
           <div className="relative h-full w-full">
-            <MediaContent block={block} variant="thumb" />
+            <MediaContent
+              block={block}
+              variant={variant === 'play' ? 'canvas' : 'thumb'}
+              kenBurns={variant === 'play' && block.kind === 'image' && !!block.kenBurns?.enabled}
+            />
             {slot.chapterTile && <ChapterOverlay block={block} />}
           </div>
         ) : textTile && block ? (
@@ -71,7 +75,7 @@ export function MediaSlot({
             <TextTile block={block} />
             <ChapterOverlay block={block} captionShown />
           </div>
-        ) : (
+        ) : variant === 'play' ? null : (
           <div className="h-full w-full border border-dashed border-text-muted/25" />
         )}
       </div>

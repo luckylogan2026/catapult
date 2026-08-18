@@ -37,7 +37,7 @@ export function PageView({
 }: {
   board: Board;
   page: Page;
-  variant: 'canvas' | 'thumb';
+  variant: 'canvas' | 'thumb' | 'play';
   selectedBlockId?: string | null;
   editingBlockId?: string | null;
   onSelectBlock?: (id: string | null) => void;
@@ -79,7 +79,7 @@ export function PageView({
                   onCommit={(t) => commitText(block.id, t)}
                 />
               ) : (
-                <MediaContent block={block} variant={variant} />
+                <MediaContent block={block} variant={variant === "canvas" ? "canvas" : variant === "play" ? "canvas" : "thumb"} kenBurns={variant === "play" && block.kind === "image" && !!block.kenBurns?.enabled} />
               );
             if (!interactive) {
               return (

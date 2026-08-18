@@ -24,6 +24,8 @@ import { useAsset } from './useAssetUrl';
 import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets';
 import { MasterAffirmationEditor } from './MasterAffirmationEditor';
 import { SettingsPanel } from '../settings/SettingsPanel';
+import { PlaybackScreen } from '../playback/PlaybackScreen';
+import type { PlaylistId } from '../../domain/types';
 
 const e = strings.editor;
 type PageTypeStrings = Record<string, { name: string; description: string }>;
@@ -45,6 +47,8 @@ function EditorInner() {
   const [snapLines, setSnapLines] = useState<SnapLines | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [playing, setPlaying] = useState<PlaylistId | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
 
   const page = board?.pages.find((p) => p.id === selectedPageId) ?? board?.pages[0] ?? null;
@@ -113,6 +117,35 @@ function EditorInner() {
           <TopButton label={strings.common.redo} disabled={!canRedo} onClick={redo} />
           <TopButton label={e.outputOrder} onClick={() => setView('order')} />
           <TopButton label={e.settings} onClick={() => setSettingsOpen(true)} />
+          <div className="relative">
+            <button
+              type="button"
+              className="rounded border border-primary px-3 py-1.5 font-body text-sm font-medium text-primary hover:bg-primary hover:text-background"
+              onClick={() => setPreviewOpen((v) => !v)}
+            >
+              {strings.playback.preview}
+            </button>
+            {previewOpen && (
+              <div className="absolute right-0 top-full z-40 mt-1 flex w-36 flex-col rounded border border-text-muted/25 bg-surface p-1 shadow-xl">
+                {(['morning', 'evening'] as PlaylistId[]).map((pl) => {
+                  const isDefault = (new Date().getHours() < 12 ? 'morning' : 'evening') === pl;
+                  return (
+                    <button
+                      key={pl}
+                      type="button"
+                      className={`rounded px-3 py-1.5 text-left font-body text-sm ${isDefault ? 'font-medium text-text' : 'text-text-muted'} hover:bg-background`}
+                      onClick={() => {
+                        setPreviewOpen(false);
+                        setPlaying(pl);
+                      }}
+                    >
+                      {pl === 'morning' ? strings.playback.playMorning : strings.playback.playEvening}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="rounded bg-primary px-3 py-1.5 font-body text-sm font-medium text-background"
@@ -356,6 +389,8 @@ function EditorInner() {
       )}
 
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+
+      {playing && <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />}
 
       {/* Page-level drop target: anywhere on the window that is not a slot. */}
       <WindowDrop onFiles={(files) => pageId && importFilesTo(files, { pageId })} />

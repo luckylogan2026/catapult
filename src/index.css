@@ -40,3 +40,43 @@ body {
   font-family: var(--tc-font-body);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Ken Burns motion for playback. Four directions, chosen per block, so
+   repeated viewing does not feel mechanical. Disabled when the device
+   asks for reduced motion. */
+@keyframes kb-a {
+  from { transform: scale(1); }
+  to { transform: scale(1.09) translate(-1.4%, -1%); }
+}
+@keyframes kb-b {
+  from { transform: scale(1.09) translate(1.2%, -0.8%); }
+  to { transform: scale(1); }
+}
+@keyframes kb-c {
+  from { transform: scale(1); }
+  to { transform: scale(1.09) translate(1.3%, 1%); }
+}
+@keyframes kb-d {
+  from { transform: scale(1.09) translate(-1.1%, 0.9%); }
+  to { transform: scale(1); }
+}
+.kb {
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kb {
+    animation: none;
+  }
+}
+
+/* Playback crossfade for non-drag advances. */
+@keyframes deck-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes deck-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

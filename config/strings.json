@@ -283,5 +283,13 @@
     "startOver": "Start over",
     "startOverWarning": "This deletes the whole board and all imported media from this device, then returns to the welcome screen. This cannot be undone.",
     "startOverConfirm": "Delete everything and start over?"
+  },
+  "playback": {
+    "preview": "Preview",
+    "playMorning": "Morning",
+    "playEvening": "Evening",
+    "empty": "Nothing to play yet. Add pages and include them in this playlist.",
+    "paused": "Paused",
+    "playAudio": "Play audio"
   }
 }
