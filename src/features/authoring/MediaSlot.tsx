@@ -2,6 +2,7 @@ import { useRef, useState, type DragEvent } from 'react';
 import { strings } from '../../config';
 import { useImport } from './ImportContext';
 import { MediaContent } from './MediaContent';
+import { FormattedText } from './FormattedText';
 import type { Block, Page } from '../../domain/types';
 import type { SlotDef } from '../../pageTypes/types';
 
@@ -143,7 +144,7 @@ export function MediaSlot({
         // A text chapter, or one still being written: the caption is
         // edited directly in the tile.
         <div
-          className={`relative flex h-full w-full items-center justify-center border p-3 text-center ${
+          className={`relative h-full w-full border p-3 ${
             textTile ? 'border-text-muted/30 bg-surface/70' : 'border-dashed border-text-muted/40 bg-surface/40'
           }`}
           onClick={(e) => {
@@ -158,13 +159,24 @@ export function MediaSlot({
               placeholder={prompt}
               onChange={(ev) => onPatch({ caption: ev.target.value })}
               onClick={(ev) => ev.stopPropagation()}
-              className="h-full w-full resize-none bg-transparent text-center font-heading text-[30px] leading-snug text-text outline-none placeholder:text-text-muted/50"
-              style={{ paddingTop: '30%' }}
+              className="h-full w-full resize-none bg-transparent font-body text-[26px] leading-snug text-text outline-none placeholder:text-text-muted/50"
+              style={{ textAlign: block.style?.align ?? 'left' }}
             />
+          ) : block.caption?.trim() ? (
+            <div className="h-full w-full overflow-y-auto">
+              <FormattedText
+                text={block.caption}
+                style={{
+                  fontFamily: 'var(--tc-font-body)',
+                  fontSize: 26,
+                  lineHeight: 1.35,
+                  color: 'var(--tc-text)',
+                  textAlign: (block.style?.align ?? 'left') as React.CSSProperties['textAlign'],
+                }}
+              />
+            </div>
           ) : (
-            <span className="font-heading text-[30px] leading-snug text-text">
-              {block.caption?.trim() || <span className="text-text-muted/60">{prompt}</span>}
-            </span>
+            <span className="font-body text-[26px] text-text-muted/60">{prompt}</span>
           )}
           <ChapterOverlay block={block} captionShown />
         </div>
@@ -248,8 +260,17 @@ function SlotButton({ label, onClick }: { label: string; onClick: () => void }) 
 // A caption-only chapter: the caption becomes the tile itself.
 function TextTile({ block }: { block: Block }) {
   return (
-    <div className="flex h-full w-full items-center justify-center border border-text-muted/30 bg-surface/70 p-3 text-center">
-      <span className="font-heading text-[30px] leading-snug text-text">{block.caption}</span>
+    <div className="h-full w-full overflow-hidden border border-text-muted/30 bg-surface/70 p-3">
+      <FormattedText
+        text={block.caption ?? ''}
+        style={{
+          fontFamily: 'var(--tc-font-body)',
+          fontSize: 26,
+          lineHeight: 1.35,
+          color: 'var(--tc-text)',
+          textAlign: (block.style?.align ?? 'left') as React.CSSProperties['textAlign'],
+        }}
+      />
     </div>
   );
 }

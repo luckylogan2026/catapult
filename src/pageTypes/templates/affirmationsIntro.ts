@@ -3,10 +3,13 @@ import { bodySlot, titleSlot } from '../geometry';
 import type { PageTypeDef } from '../types';
 
 // The framing page: the thought plus image plus emotion rule and any
-// personal cue text.
+// personal cue text. Its background image and its audio carry across
+// every affirmation screen during playback, the audio continuing as
+// long as no video with sound takes over.
 export const affirmationsIntro: PageTypeDef = {
   type: 'affirmations-intro',
   textFlow: true,
+  pageAudio: true,
   defaultTemplateId: 'prose',
   templates: [
     {

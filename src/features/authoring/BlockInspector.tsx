@@ -307,6 +307,40 @@ function ChapterControls({
         onChange={(ev) => onPatch({ caption: ev.target.value })}
         className="w-40 rounded border border-text-muted/30 bg-background px-2 py-0.5 font-body text-xs text-text"
       />
+      {!block.assetId && (
+        <>
+          <div className="flex overflow-hidden rounded border border-text-muted/30">
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => onPatch({ style: { ...block.style, align: a } })}
+                className={`px-2 py-0.5 font-body text-xs ${
+                  (block.style?.align ?? 'left') === a ? 'bg-primary text-background' : 'text-text-muted'
+                }`}
+              >
+                {a[0].toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="flex overflow-hidden rounded border border-text-muted/30">
+            <button
+              type="button"
+              onClick={() => onPatch({ caption: toggleListPrefix(block.caption ?? '', 'bullet') })}
+              className="px-2 py-0.5 font-body text-xs text-text-muted hover:text-text"
+            >
+              • {e.bulletList}
+            </button>
+            <button
+              type="button"
+              onClick={() => onPatch({ caption: toggleListPrefix(block.caption ?? '', 'number') })}
+              className="px-2 py-0.5 font-body text-xs text-text-muted hover:text-text"
+            >
+              1. {e.numberList}
+            </button>
+          </div>
+        </>
+      )}
       <div className="flex overflow-hidden rounded border border-text-muted/30">
         {(Object.keys(labels) as ChapterStatus[]).map((k) => (
           <button
