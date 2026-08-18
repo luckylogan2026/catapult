@@ -5,7 +5,6 @@ import { useBoardContext } from '../board/BoardContext';
 import { useImport } from './ImportContext';
 import { importFiles } from '../../assetPipeline/importAssets';
 import { useAssetUrl } from './useAssetUrl';
-import { clearExampleAffirmations } from './boardOps';
 
 const e = strings.editor;
 
@@ -20,7 +19,6 @@ export function AffirmationEditor() {
   const [batchText, setBatchText] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   if (!board) return null;
-  const hasExamples = board.affirmations.some((a) => a.example);
   const allSelected = board.affirmations.length > 0 && selected.size === board.affirmations.length;
 
   const patch = (id: string, p: Partial<Affirmation>) =>
@@ -61,15 +59,6 @@ export function AffirmationEditor() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-heading text-2xl text-text">{e.affirmationListTitle}</h2>
         <div className="flex flex-wrap gap-2">
-          {hasExamples && (
-            <button
-              type="button"
-              className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text-muted hover:text-text"
-              onClick={() => mutate(clearExampleAffirmations)}
-            >
-              {e.affirmationClearExamples}
-            </button>
-          )}
           <button
             type="button"
             className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text-muted hover:text-text"
