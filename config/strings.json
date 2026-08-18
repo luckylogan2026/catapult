@@ -314,7 +314,11 @@
     "affirmationCountLabel": "How many per session",
     "exportTitle": "Exports",
     "exportPdf": "Export PDF",
-    "exportingPdf": "Rendering page {n} of {total}"
+    "exportingPdf": "Rendering page {n} of {total}",
+    "exportHtml": "Export HTML (zip)",
+    "exportHtmlSingle": "Export single file",
+    "exportHtmlSingleTooBig": "Single file needs media under 25 MB. This board has {size}.",
+    "exportingHtml": "Building the HTML export"
   },
   "playback": {
     "preview": "Play",

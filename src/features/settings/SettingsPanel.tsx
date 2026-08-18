@@ -88,6 +88,34 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const [htmlInfo, setHtmlInfo] = useState<{ tooBig: boolean; size: string } | null>(null);
+
+  const saveHtml = async (single: boolean) => {
+    if (!board) return;
+    setNotice(null);
+    setBusy(s.exportingHtml);
+    try {
+      const { buildHtmlExport } = await import('../exports/htmlExport');
+      const result = await buildHtmlExport(board);
+      const mb = (result.totalMediaBytes / (1024 * 1024)).toFixed(1) + ' MB';
+      setHtmlInfo({ tooBig: !result.singleFile, size: mb });
+      const blob = single ? result.singleFile : result.zip;
+      if (!blob) {
+        setNotice(s.exportHtmlSingleTooBig.replace('{size}', mb));
+        return;
+      }
+      const date = new Date().toISOString().slice(0, 10);
+      const owner = board.meta.ownerName.trim().replace(/s+/g, '-') || 'board';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = single ? `${owner}-vision-${date}.html` : `${owner}-vision-${date}-html.zip`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const startOver = async () => {
     if (!window.confirm(s.startOverConfirm)) return;
     await db.boards.clear();
@@ -171,6 +199,23 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               onClick={savePdf}
             >
               {s.exportPdf}
+            </button>
+            <button
+              type="button"
+              disabled={!!busy}
+              className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text hover:border-primary disabled:opacity-50"
+              onClick={() => saveHtml(false)}
+            >
+              {s.exportHtml}
+            </button>
+            <button
+              type="button"
+              disabled={!!busy || !!htmlInfo?.tooBig}
+              title={htmlInfo?.tooBig ? s.exportHtmlSingleTooBig.replace('{size}', htmlInfo.size) : undefined}
+              className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text hover:border-primary disabled:opacity-40"
+              onClick={() => saveHtml(true)}
+            >
+              {s.exportHtmlSingle}
             </button>
           </div>
         </div>
