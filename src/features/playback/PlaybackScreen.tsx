@@ -85,7 +85,7 @@ export function PlaybackScreen({
 
   const count = screens?.length ?? 0;
   const current = screens?.[index];
-  const { setDucked } = useSessionAudio(playlist);
+  const { setDucked, fadeOut } = useSessionAudio(playlist);
   const [voiceActive, setVoiceActive] = useState(false);
   const onForeground = useCallback(
     (a: boolean) => {
@@ -124,6 +124,14 @@ export function PlaybackScreen({
     },
     [count],
   );
+
+  useEffect(() => {
+    if (completed) {
+      stop();
+      fadeOut();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completed]);
 
   const advance = useCallback((mode: 'slide' | 'fade' = 'fade') => goTo(index + 1, mode), [goTo, index]);
   const back = useCallback((mode: 'slide' | 'fade' = 'fade') => goTo(index - 1, mode), [goTo, index]);

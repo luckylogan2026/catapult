@@ -73,5 +73,8 @@ export function useSessionAudio(playlist: Playlist | undefined) {
     [rampTo],
   );
 
-  return { setDucked };
+  /** The session is over: fade the track out and stop it. */
+  const fadeOut = useCallback(() => rampTo(0, FADE_OUT_MS, true), [rampTo]);
+
+  return { setDucked, fadeOut };
 }
