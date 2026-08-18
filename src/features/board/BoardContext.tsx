@@ -11,6 +11,7 @@ import {
 import type { Board } from '../../domain/types';
 import { loadBoard, persistBoard, reconcileOrders } from '../../db/boardRepo';
 import { requestPersistentStorage } from '../../db/storage';
+import { ensureTemplateBlocks } from './normalize';
 
 // Undo is snapshot based: the board JSON is small (media lives in the
 // asset table), so each undo step stores a full clone. This covers block
@@ -65,7 +66,8 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       await requestPersistentStorage();
-      const existing = await loadBoard();
+      const loaded = await loadBoard();
+      const existing = loaded ? ensureTemplateBlocks(loaded) : null;
       boardRef.current = existing;
       setBoard(existing);
       setLoaded(true);
@@ -92,7 +94,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
         undoRef.current = [...undoRef.current.slice(-(UNDO_DEPTH - 1)), structuredClone(current)];
         redoRef.current = [];
       }
-      apply(reconcileOrders(producer(current)));
+      apply(reconcileOrders(ensureTemplateBlocks(producer(current))));
       bump();
     },
     [apply],

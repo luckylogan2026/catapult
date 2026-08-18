@@ -52,6 +52,8 @@ export type PageTypeDef = {
   defaultLayout?: 'template' | 'canvas';
   /** Offers the per-page one-picture-per-screen playback toggle. */
   cellExpansion?: boolean;
+  /** This page carries its own audio (meditation or narration). */
+  pageAudio?: boolean;
   /** A custom authoring surface replaces the canvas for this type. */
-  authoring?: 'affirmation-list';
+  authoring?: 'affirmation-list' | 'master-affirmation-list';
 };

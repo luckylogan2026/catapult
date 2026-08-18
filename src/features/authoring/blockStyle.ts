@@ -11,6 +11,7 @@ export function textStyleCss(style: Block['style']): React.CSSProperties {
     fontStyle: s.italic ? 'italic' : 'normal',
     textAlign: (s.align ?? 'left') as React.CSSProperties['textAlign'],
     lineHeight: s.lineHeight ?? 1.35,
+    textShadow: s.shadow ? '0 2px 14px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.5)' : undefined,
     color:
       s.color === 'muted'
         ? 'var(--tc-text-muted)'

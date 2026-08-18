@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { strings } from '../../config';
-import { CANVAS_W, CANVAS_H, type OutputTarget } from '../../domain/types';
+import { CANVAS_W, CANVAS_H, type OutputTarget, type Page as PageT } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { getPageTypeDef, pageTypeRegistry } from '../../pageTypes/registry';
 import { ImportProvider, useImport } from './ImportContext';
@@ -19,6 +19,11 @@ import { BlockInspector } from './BlockInspector';
 import { AffirmationEditor } from './AffirmationEditor';
 import { OrderEditor } from '../ordering/OrderEditor';
 import type { SnapLines } from './CanvasBlockFrame';
+import { fontChoices } from '../../theme/fontChoices';
+import { useAsset } from './useAssetUrl';
+import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets';
+import { MasterAffirmationEditor } from './MasterAffirmationEditor';
+import { SettingsPanel } from '../settings/SettingsPanel';
 
 const e = strings.editor;
 type PageTypeStrings = Record<string, { name: string; description: string }>;
@@ -39,6 +44,7 @@ function EditorInner() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [snapLines, setSnapLines] = useState<SnapLines | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
 
   const page = board?.pages.find((p) => p.id === selectedPageId) ?? board?.pages[0] ?? null;
@@ -106,6 +112,7 @@ function EditorInner() {
           <TopButton label={strings.common.undo} disabled={!canUndo} onClick={undo} />
           <TopButton label={strings.common.redo} disabled={!canRedo} onClick={redo} />
           <TopButton label={e.outputOrder} onClick={() => setView('order')} />
+          <TopButton label={e.settings} onClick={() => setSettingsOpen(true)} />
           <button
             type="button"
             className="rounded bg-primary px-3 py-1.5 font-body text-sm font-medium text-background"
@@ -158,7 +165,7 @@ function EditorInner() {
                     ))}
                   </select>
                 )}
-                {def.authoring !== 'affirmation-list' && (
+                {def.authoring === undefined && (
                   <button
                     type="button"
                     className="rounded border border-text-muted/30 px-2 py-1 font-body text-xs text-text-muted hover:text-text"
@@ -173,6 +180,24 @@ function EditorInner() {
                     {page.layout === 'template' ? e.unlockCanvas : e.relockTemplate}
                   </button>
                 )}
+                {def.authoring === undefined && (
+                  <select
+                    title={e.masterFontLabel}
+                    value={page.masterFont ?? ''}
+                    onChange={(ev) =>
+                      mutate((b) => updatePage(b, page.id, { masterFont: ev.target.value || undefined }))
+                    }
+                    className="rounded border border-text-muted/30 bg-background px-2 py-1 font-body text-xs text-text"
+                  >
+                    <option value="">{e.masterFontTheme}</option>
+                    {fontChoices.map((f) => (
+                      <option key={f.family} value={f.family}>
+                        {f.family}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {def.pageAudio && <PageAudioControl page={page} />}
                 {def.cellExpansion && (
                   <label
                     title={e.expandCellsHint}
@@ -219,7 +244,7 @@ function EditorInner() {
                 </div>
               </div>
 
-              {selectedBlock && def.authoring !== 'affirmation-list' && (
+              {selectedBlock && def.authoring === undefined && (
                 <BlockInspector board={board} page={page} block={selectedBlock} />
               )}
 
@@ -227,6 +252,10 @@ function EditorInner() {
               {def.authoring === 'affirmation-list' ? (
                 <div className="min-h-0 grow overflow-y-auto">
                   <AffirmationEditor />
+                </div>
+              ) : def.authoring === 'master-affirmation-list' ? (
+                <div className="min-h-0 grow overflow-y-auto">
+                  <MasterAffirmationEditor />
                 </div>
               ) : (
                 <ScaledCanvas
@@ -317,9 +346,61 @@ function EditorInner() {
         </div>
       )}
 
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+
       {/* Page-level drop target: anywhere on the window that is not a slot. */}
       <WindowDrop onFiles={(files) => pageId && importFilesTo(files, { pageId })} />
     </div>
+  );
+}
+
+// The audio meditation attached to a page (ASP process). Stored through
+// the same content-addressed pipeline; playback plays it on this page.
+function PageAudioControl({ page }: { page: PageT }) {
+  const { board, mutate } = useBoardContext();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const asset = useAsset(page.narrationAssetId);
+  const secs = asset?.durationMs ? Math.round(asset.durationMs / 1000) : null;
+  return (
+    <span className="flex items-center gap-1.5 font-body text-xs text-text-muted">
+      {e.pageAudioLabel}
+      {asset && secs !== null && (
+        <span className="text-text">
+          {Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}
+        </span>
+      )}
+      <button
+        type="button"
+        className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
+        onClick={() => fileRef.current?.click()}
+      >
+        {asset ? e.pageAudioReplace : e.pageAudioAdd}
+      </button>
+      {asset && (
+        <button
+          type="button"
+          className="rounded border border-text-muted/30 px-2 py-0.5 hover:text-text"
+          onClick={() => mutate((b) => updatePage(b, page.id, { narrationAssetId: undefined }))}
+        >
+          {strings.common.remove}
+        </button>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="audio/*"
+        hidden
+        onChange={async (ev) => {
+          const file = ev.target.files?.[0];
+          ev.target.value = '';
+          if (!file || !board) return;
+          const [r] = await importFilesRaw([file], {
+            archiveOriginals: board.settings.archiveOriginals,
+          });
+          if (r) mutate((b) => updatePage(b, page.id, { narrationAssetId: r.asset.id }));
+        }}
+      />
+    </span>
   );
 }
 

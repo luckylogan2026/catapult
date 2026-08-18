@@ -74,7 +74,17 @@
     "affirmationClearExamples": "Remove all example affirmations",
     "affirmationExampleTag": "Example",
     "expandCells": "One picture per screen",
-    "expandCellsHint": "In playback, each picture in this mosaic gets its own full screen."
+    "expandCellsHint": "In playback, each picture in this mosaic gets its own full screen.",
+    "masterFontLabel": "Page font",
+    "masterFontTheme": "Theme fonts",
+    "textColorLabel": "Color",
+    "textShadowLabel": "Shadow",
+    "pageAudioLabel": "Meditation audio",
+    "pageAudioAdd": "Add audio",
+    "pageAudioReplace": "Replace audio",
+    "masterAffirmationAdd": "Add master affirmation",
+    "masterAffirmationTextLabel": "Declaration",
+    "masterAffirmationAudio": "Audio"
   },
   "import": {
     "dropHere": "Drop images or video here",
@@ -124,18 +134,20 @@
     },
     "principles": {
       "name": "Principles",
-      "description": "Up to nine numbered principles, a heading and a paragraph each.",
+      "description": "Your numbered principles as one pasted text that fills the page.",
       "slots": {
         "title": "Principles",
-        "subtitle": "Keywords"
+        "subtitle": "Keywords",
+        "body": "Type or paste your principles here. Numbered lines and bullet lines format automatically."
       }
     },
     "daily-ritual": {
       "name": "Daily Ritual",
-      "description": "Short numbered steps for the daily practice.",
+      "description": "The steps of your daily practice as one pasted text.",
       "slots": {
         "title": "Daily Ritual",
-        "subtitle": "Keywords"
+        "subtitle": "Keywords",
+        "body": "Type or paste your ritual steps here."
       }
     },
     "vision-board": {
@@ -186,10 +198,11 @@
     },
     "goals": {
       "name": "Goals",
-      "description": "Numbered goals under headings you define.",
+      "description": "Category headings and numbered goals as one pasted text.",
       "slots": {
         "title": "Goals",
-        "subtitle": "Keywords"
+        "subtitle": "Keywords",
+        "body": "Type or paste your goals here, with a heading line above each category."
       }
     },
     "affirmations-intro": {
@@ -210,32 +223,53 @@
       }
     },
     "asp-process": {
-      "name": "ASP Process",
-      "description": "A guided sequence with timed pauses.",
+      "name": "Meditation",
+      "description": "An audio meditation with optional guiding text.",
       "slots": {
-        "title": "ASP Process",
+        "title": "Meditation",
         "subtitle": "Keywords",
-        "body": "Write the steps of your process. Insert [pause] wherever a silence belongs."
+        "body": "Optional guiding text. Insert [pause] wherever a silence belongs.",
+        "background": "Background image or video"
       }
     },
     "free-canvas": {
       "name": "Free Canvas",
       "description": "An empty page. Place anything anywhere.",
       "slots": {}
+    },
+    "master-affirmations": {
+      "name": "Master Affirmations",
+      "description": "Longer declarations, paragraph length, each with optional recorded audio.",
+      "slots": {
+        "title": "Master Affirmations",
+        "subtitle": "Keywords"
+      }
     }
   },
   "templates": {
     "fullBleed": "Full bleed",
     "prose": "Prose",
-    "numbered": "Numbered",
-    "steps": "Steps",
-    "mosaicThree": "Three cells",
-    "mosaicFive": "Five cells",
-    "mosaicEight": "Eight cells",
     "gridNine": "Nine tiles",
     "quadrants": "Four sections",
-    "categories": "Categories",
     "list": "List",
-    "blank": "Blank"
+    "blank": "Blank",
+    "cellsOne": "One picture",
+    "cellsTwo": "Two pictures",
+    "cellsThree": "Three pictures",
+    "cellsFour": "Four pictures",
+    "cellsFive": "Five pictures",
+    "cellsSix": "Six pictures"
+  },
+  "settings": {
+    "title": "Settings",
+    "autosaveNote": "Every change saves automatically on this device. There is no save button to press.",
+    "backupNote": "Backup to a file and restore arrive with exports in a later phase.",
+    "storageUsage": "Storage used",
+    "storagePersistent": "Protected from cleanup",
+    "storageNotPersistent": "Not yet protected from cleanup",
+    "archiveOriginals": "Keep full resolution originals when photos are downscaled",
+    "startOver": "Start over",
+    "startOverWarning": "This deletes the whole board and all imported media from this device, then returns to the welcome screen. This cannot be undone.",
+    "startOverConfirm": "Delete everything and start over?"
   }
 }

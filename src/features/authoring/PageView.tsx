@@ -7,6 +7,8 @@ import { MediaSlot } from './MediaSlot';
 import { TextBlockView } from './TextBlockView';
 import { CanvasBlockFrame, type SnapLines } from './CanvasBlockFrame';
 import { textStyleCss } from './blockStyle';
+import { FormattedText } from './FormattedText';
+import { fontStack } from '../../theme/fontChoices';
 import { swapSlots, updateBlock } from './boardOps';
 import { useBoardContext } from '../board/BoardContext';
 
@@ -179,9 +181,7 @@ export function PageView({
                   onCommit={(t) => commitText(block.id, t)}
                 />
               ) : (
-                <div className="h-full w-full whitespace-pre-wrap" style={textStyleCss(block.style)}>
-                  {block.text}
-                </div>
+                <FormattedText text={block.text ?? ''} style={textStyleCss(block.style)} />
               )}
             </div>
           );
@@ -219,9 +219,7 @@ export function PageView({
                       onCommit={(t) => commitText(block.id, t)}
                     />
                   ) : (
-                    <div className="whitespace-pre-wrap" style={textStyleCss(block.style)}>
-                      {block.text}
-                    </div>
+                    <FormattedText text={block.text ?? ''} style={textStyleCss(block.style)} />
                   )}
                 </div>
               </div>
@@ -230,10 +228,19 @@ export function PageView({
       </>
     );
 
+  // A per-page master font overrides both theme font variables locally,
+  // so every text block on the page follows it.
+  const fontVars = page.masterFont
+    ? ({
+        '--tc-font-heading': fontStack(page.masterFont),
+        '--tc-font-body': fontStack(page.masterFont),
+      } as React.CSSProperties)
+    : undefined;
+
   return (
     <div
       className="relative bg-background"
-      style={{ width: CANVAS_W, height: pageH }}
+      style={{ width: CANVAS_W, height: pageH, ...fontVars }}
       onClick={() => interactive && onSelectBlock?.(null)}
     >
       {body}

@@ -34,6 +34,7 @@ export type PageType =
   | 'goals'
   | 'affirmations-intro'
   | 'affirmations'
+  | 'master-affirmations'
   | 'asp-process'
   | 'free-canvas';
 
@@ -59,6 +60,8 @@ export type Block = {
     weight?: number;
     lineHeight?: number;
     italic?: boolean;
+    /** Soft dark drop shadow so text stays readable over imagery. */
+    shadow?: boolean;
   };
   /** Cover-fit focal point, 0..1 in each axis. Defaults to center. */
   focal?: { x: number; y: number };
@@ -95,6 +98,12 @@ export type Page = {
    * showing the mosaic as one page. Set per page in the editor.
    */
   expandCells?: boolean;
+  /**
+   * Per-page master font. When set, every text block on the page renders
+   * in this family, overriding the theme pair. Family name from the
+   * selectable font list in src/theme/fontChoices.ts.
+   */
+  masterFont?: string;
   /** Computed ambient letterbox fill, cached. Recomputed when media changes. */
   backdrop?: { color: string; blurDataUri: string };
 };
@@ -117,6 +126,18 @@ export type Asset = {
   durationMs?: number;
   originalFilename?: string;
   addedAt: string;
+};
+
+/**
+ * Master affirmations: longer declarations, paragraph length, optionally
+ * carrying user-supplied audio (a dictated mp3, for example). Playback
+ * gives each active one its own screen, with its audio when present.
+ */
+export type MasterAffirmation = {
+  id: string;
+  text: string;
+  audioAssetId?: string;
+  active: boolean;
 };
 
 export type Affirmation = {
@@ -211,6 +232,7 @@ export type Board = {
   settings: Settings;
   pages: Page[];
   affirmations: Affirmation[];
+  masterAffirmations?: MasterAffirmation[];
   playlists: Playlist[];
   streak: StreakRecord;
 };

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { strings } from '../../config';
 import { textStyleCss } from './blockStyle';
+import { FormattedText } from './FormattedText';
 import type { Block } from '../../domain/types';
 
 // Text display with in-place editing. Single click selects the block,
@@ -56,10 +57,26 @@ export function TextBlockView({
   }
 
   const empty = !(block.text ?? '').trim();
+  if (empty) {
+    return (
+      <div
+        className="h-full w-full whitespace-pre-wrap"
+        style={{ ...css, opacity: 0.35, cursor: 'text' }}
+        onClick={(e) => {
+          if (selected) {
+            e.stopPropagation();
+            onStartEdit();
+          }
+        }}
+      >
+        {placeholder ?? strings.editor.textPlaceholder}
+      </div>
+    );
+  }
   return (
     <div
-      className="h-full w-full whitespace-pre-wrap"
-      style={{ ...css, opacity: empty ? 0.35 : 1, cursor: 'text' }}
+      className="h-full w-full"
+      style={{ cursor: 'text' }}
       onClick={(e) => {
         if (selected) {
           e.stopPropagation();
@@ -67,7 +84,7 @@ export function TextBlockView({
         }
       }}
     >
-      {empty ? (placeholder ?? strings.editor.textPlaceholder) : block.text}
+      <FormattedText text={block.text ?? ''} style={css} />
     </div>
   );
 }

@@ -11,9 +11,10 @@ function cell(id: string, rect: BlockRect): SlotDef {
   return { id, kind: 'media', promptKey: 'cell', rect };
 }
 
-// Three mosaic arrangements: three, five, and eight cells. Cells take
-// video as readily as stills, and never carry captions.
-function mosaic(id: string, nameKey: string, cells: BlockRect[]): TemplateDef {
+// Arrangements for one through six pictures per page. Cells take video as
+// readily as stills, and never carry captions. The per-page expandCells
+// toggle turns any arrangement into one picture per screen in playback.
+function arrangement(id: string, nameKey: string, cells: BlockRect[]): TemplateDef {
   return {
     id,
     nameKey,
@@ -21,37 +22,46 @@ function mosaic(id: string, nameKey: string, cells: BlockRect[]): TemplateDef {
   };
 }
 
-const colW = (CONTENT_W - GAP) / 2;
+const halfW = (CONTENT_W - GAP) / 2;
 const thirdW = (CONTENT_W - GAP * 2) / 3;
-const rowH2 = (H - GAP) / 2;
-const rowH3 = (H - GAP * 2) / 3;
+const halfH = (H - GAP) / 2;
 
 export const visionBoardTemplates: TemplateDef[] = [
-  mosaic('mosaic-3', 'mosaicThree', [
-    { x: MARGIN, y: TOP, w: CONTENT_W, h: rowH2, rot: 0 },
-    { x: MARGIN, y: TOP + rowH2 + GAP, w: colW, h: rowH2, rot: 0 },
-    { x: MARGIN + colW + GAP, y: TOP + rowH2 + GAP, w: colW, h: rowH2, rot: 0 },
+  arrangement('cells-1', 'cellsOne', [{ x: MARGIN, y: TOP, w: CONTENT_W, h: H, rot: 0 }]),
+  arrangement('cells-2', 'cellsTwo', [
+    { x: MARGIN, y: TOP, w: halfW, h: H, rot: 0 },
+    { x: MARGIN + halfW + GAP, y: TOP, w: halfW, h: H, rot: 0 },
   ]),
-  mosaic('mosaic-5', 'mosaicFive', [
-    { x: MARGIN, y: TOP, w: colW, h: rowH2, rot: 0 },
-    { x: MARGIN + colW + GAP, y: TOP, w: colW, h: rowH2, rot: 0 },
-    { x: MARGIN, y: TOP + rowH2 + GAP, w: thirdW, h: rowH2, rot: 0 },
-    { x: MARGIN + thirdW + GAP, y: TOP + rowH2 + GAP, w: thirdW, h: rowH2, rot: 0 },
-    { x: MARGIN + (thirdW + GAP) * 2, y: TOP + rowH2 + GAP, w: thirdW, h: rowH2, rot: 0 },
+  arrangement('cells-3', 'cellsThree', [
+    { x: MARGIN, y: TOP, w: CONTENT_W, h: halfH, rot: 0 },
+    { x: MARGIN, y: TOP + halfH + GAP, w: halfW, h: halfH, rot: 0 },
+    { x: MARGIN + halfW + GAP, y: TOP + halfH + GAP, w: halfW, h: halfH, rot: 0 },
   ]),
-  mosaic(
-    'mosaic-8',
-    'mosaicEight',
-    [0, 1, 2].flatMap((row) =>
+  arrangement('cells-4', 'cellsFour', [
+    { x: MARGIN, y: TOP, w: halfW, h: halfH, rot: 0 },
+    { x: MARGIN + halfW + GAP, y: TOP, w: halfW, h: halfH, rot: 0 },
+    { x: MARGIN, y: TOP + halfH + GAP, w: halfW, h: halfH, rot: 0 },
+    { x: MARGIN + halfW + GAP, y: TOP + halfH + GAP, w: halfW, h: halfH, rot: 0 },
+  ]),
+  arrangement('cells-5', 'cellsFive', [
+    { x: MARGIN, y: TOP, w: halfW, h: halfH, rot: 0 },
+    { x: MARGIN + halfW + GAP, y: TOP, w: halfW, h: halfH, rot: 0 },
+    { x: MARGIN, y: TOP + halfH + GAP, w: thirdW, h: halfH, rot: 0 },
+    { x: MARGIN + thirdW + GAP, y: TOP + halfH + GAP, w: thirdW, h: halfH, rot: 0 },
+    { x: MARGIN + (thirdW + GAP) * 2, y: TOP + halfH + GAP, w: thirdW, h: halfH, rot: 0 },
+  ]),
+  arrangement(
+    'cells-6',
+    'cellsSix',
+    [0, 1].flatMap((row) =>
       [0, 1, 2].map((col) => ({
         x: MARGIN + col * (thirdW + GAP),
-        y: TOP + row * (rowH3 + GAP),
+        y: TOP + row * (halfH + GAP),
         w: thirdW,
-        h: rowH3,
+        h: halfH,
         rot: 0,
       })),
-    ).filter((_, i) => i !== 4)
-      .map((r, i) => (i === 3 ? { ...r, w: thirdW * 2 + GAP } : r)),
+    ),
   ),
 ];
 
@@ -59,6 +69,6 @@ export const visionBoard: PageTypeDef = {
   type: 'vision-board',
   textFlow: false,
   cellExpansion: true,
-  defaultTemplateId: 'mosaic-3',
+  defaultTemplateId: 'cells-3',
   templates: visionBoardTemplates,
 };

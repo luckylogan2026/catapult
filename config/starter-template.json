@@ -1,19 +1,50 @@
 {
   "pages": [
-    { "type": "cover" },
-    { "type": "instructions" },
-    { "type": "principles" },
-    { "type": "daily-ritual" },
-    { "type": "vision-board" },
-    { "type": "vision-board" },
-    { "type": "chapters" },
-    { "type": "legacy" },
-    { "type": "manifesto" },
-    { "type": "profile" },
-    { "type": "goals" },
-    { "type": "affirmations-intro" },
-    { "type": "affirmations" },
-    { "type": "asp-process" }
+    {
+      "type": "cover"
+    },
+    {
+      "type": "instructions"
+    },
+    {
+      "type": "principles"
+    },
+    {
+      "type": "asp-process"
+    },
+    {
+      "type": "daily-ritual"
+    },
+    {
+      "type": "vision-board"
+    },
+    {
+      "type": "vision-board"
+    },
+    {
+      "type": "chapters"
+    },
+    {
+      "type": "legacy"
+    },
+    {
+      "type": "manifesto"
+    },
+    {
+      "type": "profile"
+    },
+    {
+      "type": "goals"
+    },
+    {
+      "type": "affirmations-intro"
+    },
+    {
+      "type": "affirmations"
+    },
+    {
+      "type": "master-affirmations"
+    }
   ],
   "affirmations": [
     "I am calm, clear, and present.",

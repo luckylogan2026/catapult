@@ -1,15 +1,11 @@
-import { BODY_Y, CONTENT_W, MARGIN, subtitleSlot, titleSlot } from '../geometry';
+import { bodySlot, subtitleSlot, titleSlot } from '../geometry';
 import type { PageTypeDef } from '../types';
 
+// Pasted prose, like Principles: type or paste the ritual steps as one
+// text and it fills the page.
 export const dailyRitual: PageTypeDef = {
   type: 'daily-ritual',
   textFlow: true,
-  defaultTemplateId: 'steps',
-  templates: [{ id: 'steps', nameKey: 'steps', slots: [titleSlot(), subtitleSlot()] }],
-  itemFlow: {
-    region: { x: MARGIN, y: BODY_Y, w: CONTENT_W, h: 1650 - BODY_Y - MARGIN },
-    itemH: 110,
-    gap: 24,
-    itemStyle: { fontFamily: 'body', fontSize: 36, weight: 400, align: 'left', lineHeight: 1.4 },
-  },
+  defaultTemplateId: 'prose',
+  templates: [{ id: 'prose', nameKey: 'prose', slots: [titleSlot(), subtitleSlot(), bodySlot()] }],
 };

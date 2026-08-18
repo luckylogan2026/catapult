@@ -48,6 +48,16 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
               </button>
             ))}
           </div>
+          <ColorControl block={block} onPatch={patch} />
+          <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={block.style?.shadow ?? false}
+              onChange={(ev) => patch({ style: { ...block.style, shadow: ev.target.checked } })}
+              className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+            />
+            {e.textShadowLabel}
+          </label>
         </>
       )}
 
@@ -120,6 +130,43 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
           {isItem ? e.removeItem : strings.common.delete}
         </button>
       )}
+    </div>
+  );
+}
+
+// Text color: the theme roles plus white, black, and a free custom pick.
+// Roles keep following the theme; a custom hex is fixed.
+function ColorControl({ block, onPatch }: { block: Block; onPatch: (p: Partial<Block>) => void }) {
+  const current = block.style?.color;
+  const swatches: { value: string | undefined; css: string; label: string }[] = [
+    { value: undefined, css: 'var(--tc-text)', label: 'text' },
+    { value: 'muted', css: 'var(--tc-text-muted)', label: 'muted' },
+    { value: 'var(--tc-primary)', css: 'var(--tc-primary)', label: 'accent' },
+    { value: 'var(--tc-secondary)', css: 'var(--tc-secondary)', label: 'secondary' },
+    { value: '#FFFFFF', css: '#FFFFFF', label: 'white' },
+    { value: '#111111', css: '#111111', label: 'black' },
+  ];
+  return (
+    <div className="flex items-center gap-1" title={e.textColorLabel}>
+      {swatches.map((s) => (
+        <button
+          key={s.label}
+          type="button"
+          title={s.label}
+          onClick={() => onPatch({ style: { ...block.style, color: s.value } })}
+          className={`h-5 w-5 rounded-full border ${
+            current === s.value ? 'border-primary ring-1 ring-primary' : 'border-text-muted/40'
+          }`}
+          style={{ background: s.css }}
+        />
+      ))}
+      <input
+        type="color"
+        value={/^#[0-9a-fA-F]{6}$/.test(current ?? '') ? (current as string) : '#d4a853'}
+        onChange={(ev) => onPatch({ style: { ...block.style, color: ev.target.value } })}
+        className="h-5 w-6 cursor-pointer rounded border border-text-muted/40 bg-transparent p-0"
+        title={e.textColorLabel}
+      />
     </div>
   );
 }
