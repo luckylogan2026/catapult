@@ -114,6 +114,16 @@ function EditorInner() {
         <span className="font-body text-xs text-text-muted">
           {saveState === 'saving' ? strings.common.saving : saveState === 'saved' ? strings.common.saved : ''}
         </span>
+        {syncEngine.status && (
+          <button
+            type="button"
+            className="truncate font-body text-xs text-text-muted hover:text-text"
+            onClick={() => void syncEngine.syncNow()}
+            title={strings.sync.title}
+          >
+            {syncEngine.status}
+          </button>
+        )}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
           <TopButton label={strings.common.undo} disabled={!canUndo} onClick={undo} />
           <TopButton label={strings.common.redo} disabled={!canRedo} onClick={redo} />
