@@ -107,7 +107,7 @@ function EditorInner() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Top bar */}
-      <header className="flex items-center gap-3 border-b border-text-muted/15 px-4 py-2">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-text-muted/15 px-2 py-2 md:px-4">
         <h1 className="truncate font-heading text-lg text-primary">{board.meta.title}</h1>
         <span className="font-body text-xs text-text-muted">
           {saveState === 'saving' ? strings.common.saving : saveState === 'saved' ? strings.common.saved : ''}
@@ -156,7 +156,7 @@ function EditorInner() {
         </div>
       </header>
 
-      <div className="flex min-h-0 grow">
+      <div className="flex min-h-0 grow flex-col md:flex-row">
         <PageRail
           board={board}
           selectedPageId={pageId}

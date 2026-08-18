@@ -5,6 +5,8 @@ import { PageView } from '../authoring/PageView';
 import { MediaContent } from '../authoring/MediaContent';
 import { TextFlowView, TextFlowContent } from './TextFlowView';
 import { Teleprompter } from './Teleprompter';
+import { VisionFillView } from './VisionFillView';
+import { getPageTypeDef } from '../../pageTypes/registry';
 import { FormattedText } from '../authoring/FormattedText';
 
 // One playback screen. Fixed-canvas pages scale to fit with the ambient
@@ -104,6 +106,15 @@ export function ScreenView({
           <TextFlowView page={screen.page} />
         </div>
       );
+    }
+    // Vision pages fill the viewport with their pictures instead of
+    // letterboxing the canvas.
+    const def = getPageTypeDef(screen.page.type);
+    if (def.cellExpansion) {
+      const cells = screen.page.blocks
+        .filter((b) => b.slotId?.startsWith('cell-') && b.assetId)
+        .sort((a, b) => (a.slotId ?? '').localeCompare(b.slotId ?? '', undefined, { numeric: true }));
+      if (cells.length) return <VisionFillView page={screen.page} cells={cells.slice(0, 6)} />;
     }
     return (
       <div className="relative h-full w-full">
