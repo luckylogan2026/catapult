@@ -115,6 +115,9 @@ export async function importUrl(
   const res = await fetch(url);
   if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
   const blob = await res.blob();
+  // A page link (YouTube, a news article) yields HTML, not media. Tell
+  // the user what happened instead of a generic failure.
+  if (/^(text/|application/xhtml)/.test(blob.type)) throw new Error('url-is-page');
   const filename = new URL(url).pathname.split('/').pop() ?? '';
   return importBlob(blob, { filename, archiveOriginals: opts.archiveOriginals });
 }

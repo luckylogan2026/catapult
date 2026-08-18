@@ -134,8 +134,12 @@ export function ImportProvider({
       setBusyLabel(strings.import.importing);
       try {
         finish([await importUrl(url, { archiveOriginals: archive })], target);
-      } catch {
-        setNotice(strings.import.urlFailed);
+      } catch (err) {
+        setNotice(
+          err instanceof Error && err.message === 'url-is-page'
+            ? strings.import.urlIsPage
+            : strings.import.urlFailed,
+        );
       } finally {
         setBusyLabel(null);
       }

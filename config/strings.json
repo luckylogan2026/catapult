@@ -103,7 +103,8 @@
     "importing": "Importing",
     "largeFileWarning": "This file is very large. Large videos slow the morning ritual and use device storage quickly.",
     "unsupportedType": "That file type is not supported here.",
-    "urlFailed": "That address could not be loaded."
+    "urlFailed": "That address could not be loaded.",
+    "urlIsPage": "That link is a web page, not a media file. For sites like YouTube, download the video first, then import the file here."
   },
   "order": {
     "title": "Output order",
