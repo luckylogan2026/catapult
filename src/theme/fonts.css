@@ -1,0 +1,28 @@
+/* Self-hosted variable fonts, Latin subset. Downloaded once at build time
+   and committed to the repo. No CDN requests happen at runtime. Google
+   serves one variable file per family and style, so one file covers the
+   full weight range. */
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+  src: url('../assets/fonts/dm-sans.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('../assets/fonts/playfair-display.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: italic;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('../assets/fonts/playfair-display-italic.woff2') format('woff2');
+}
