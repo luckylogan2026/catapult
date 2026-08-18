@@ -94,25 +94,25 @@ export function CompletionScreen({
         {c.streakLabel} · {c.morningShort} {morning} · {c.eveningShort} {evening}
       </p>
 
-      <div className="w-full max-w-lg">
+      <div className="relative w-full max-w-lg">
         <textarea
           value={note}
           onChange={(ev) => setNote(ev.target.value)}
           placeholder={c.notePlaceholder}
           rows={6}
-          className="w-full resize-y rounded border border-text-muted/30 bg-surface/60 p-3 text-center font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
+          className="w-full resize-y rounded border border-text-muted/30 bg-surface/60 p-3 pb-10 text-left font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
         />
         {canDictate && (
           <button
             type="button"
             onClick={toggleDictation}
-            className={`mt-2 rounded-full border px-4 py-1.5 font-body text-xs ${
+            className={`absolute bottom-3 right-2 rounded-full border px-3 py-1 font-body text-[11px] ${
               listening
                 ? 'border-red-400 bg-red-500/20 text-red-300'
                 : 'border-text-muted/30 text-text-muted hover:text-text'
             }`}
           >
-            {listening ? c.dictateStop : c.dictateStart}
+            {listening ? c.dictateStop : '🎤 ' + c.dictateStart}
           </button>
         )}
       </div>
@@ -120,9 +120,9 @@ export function CompletionScreen({
       <button
         type="button"
         onClick={finish}
-        className="rounded bg-primary px-8 py-2.5 font-body text-sm font-medium text-background"
+        className="mt-2 w-full max-w-lg rounded bg-primary px-8 py-3 font-body text-base font-medium text-background"
       >
-        {strings.common.done}
+        {c.finish}
       </button>
     </div>
   );

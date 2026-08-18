@@ -337,6 +337,7 @@
     "eveningShort": "Evening",
     "notePlaceholder": "One line about today",
     "dictateStart": "Speak instead",
-    "dictateStop": "Stop listening"
+    "dictateStop": "Stop listening",
+    "finish": "Save and finish"
   }
 }
