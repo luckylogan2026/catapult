@@ -152,7 +152,7 @@ export function SettingsPanel({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-lg bg-surface p-5"
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-lg bg-surface p-4"
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="flex items-center justify-between">

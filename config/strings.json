@@ -283,16 +283,16 @@
   },
   "settings": {
     "title": "Settings",
-    "autosaveNote": "Every change saves automatically on this device. There is no save button to press.",
+    "autosaveNote": "Every change saves to this device instantly. There is no save button.",
     "storageUsage": "Storage used",
     "storagePersistent": "Protected from cleanup",
     "storageNotPersistent": "Not yet protected from cleanup",
     "archiveOriginals": "Keep full resolution originals when photos are downscaled",
     "startOver": "Start over",
-    "startOverWarning": "This deletes the whole board and all imported media from this device, then returns to the welcome screen. This cannot be undone.",
+    "startOverWarning": "Deletes the board and media from this device and returns to the welcome screen. Cannot be undone.",
     "startOverConfirm": "Delete everything and start over?",
     "backupTitle": "Backup",
-    "backupBody": "Save the whole board, media included, as one file. Open that file on another device to bring the board there.",
+    "backupBody": "One file holds the whole board, media included. Open it on another device to move the board there.",
     "exportBackup": "Save backup file",
     "importBackup": "Load backup file",
     "importConfirmReplace": "Loading this backup replaces the board on this device. Continue?",
@@ -318,10 +318,10 @@
     "ttsLabel": "Speak affirmations aloud",
     "ttsVoiceLabel": "Voice",
     "ttsRateLabel": "Speaking rate",
-    "ttsDeviceNote": "Available voices depend on this device. Some Android voices need a one-time download in system settings before they work offline.",
+    "ttsDeviceNote": "Voices come from this device. Some Android voices need a one-time download to work offline.",
     "autoAdvanceLabel": "Advance automatically",
     "dwellLabel": "Seconds per page",
-    "autoAdvanceHint": "Off means pages wait for your swipe. On, each page holds for its audio to finish, then the timer runs."
+    "autoAdvanceHint": "Off waits for your swipe. On holds each page for its audio, then runs the timer."
   },
   "playback": {
     "preview": "Play",
@@ -343,7 +343,7 @@
   },
   "sync": {
     "title": "Google Drive sync",
-    "body": "Optional and off by default. Your board syncs to a private folder in your own Google Drive, so edits on one device appear on the others.",
+    "body": "Off by default. The board syncs to a private folder in your own Google Drive.",
     "notConfigured": "Sync is not configured for this copy of the app.",
     "connect": "Connect Google Drive",
     "connected": "Connected",
