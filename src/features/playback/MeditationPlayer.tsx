@@ -54,6 +54,7 @@ export function MeditationPlayer({
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<{ elapsed: number; total: number; label?: string } | null>(null);
   const [picker, setPicker] = useState<number | 'music' | null>(null);
+  const [scrub, setScrub] = useState<number | null>(null);
   const autoStarted = useRef(false);
 
   const library = useMemo(() => board?.meditationLibrary ?? [], [board?.meditationLibrary]);
@@ -261,7 +262,8 @@ export function MeditationPlayer({
                   engineRef.current?.setMusicVolume(v);
                   save({ ...config, musicVolume: v });
                 }}
-                className="h-1 min-w-0 grow accent-[var(--tc-primary)]"
+                className="h-6 min-w-0 grow accent-[var(--tc-primary)]"
+                style={{ touchAction: 'none' }}
               />
               <label className="flex shrink-0 items-center gap-1 font-body text-[10px] text-white/60">
                 <input
@@ -278,25 +280,41 @@ export function MeditationPlayer({
           {playing && progress && (
             <div className="mt-2">
               <div
-                className="cursor-pointer py-1.5"
-                onClick={(ev) => {
+                className="cursor-pointer py-2.5"
+                style={{ touchAction: 'none' }}
+                onPointerDown={(ev) => {
+                  ev.currentTarget.setPointerCapture(ev.pointerId);
                   const r = ev.currentTarget.getBoundingClientRect();
-                  const frac = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
-                  void engineRef.current?.seek(frac * progress.total);
-                  setPausedUi(false);
+                  setScrub(Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)));
                 }}
+                onPointerMove={(ev) => {
+                  if (scrub === null) return;
+                  const r = ev.currentTarget.getBoundingClientRect();
+                  setScrub(Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)));
+                }}
+                onPointerUp={() => {
+                  if (scrub === null) return;
+                  void engineRef.current?.seek(scrub * progress.total);
+                  setPausedUi(false);
+                  setScrub(null);
+                }}
+                onPointerCancel={() => setScrub(null)}
               >
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/15">
                   <div
-                    className="h-1.5 rounded-full bg-primary"
-                    style={{ width: `${Math.min(100, (progress.elapsed / Math.max(1, progress.total)) * 100)}%` }}
+                    className="h-2 rounded-full bg-primary"
+                    style={{
+                      width: `${Math.min(100, (scrub !== null ? scrub : progress.elapsed / Math.max(1, progress.total)) * 100)}%`,
+                    }}
                   />
                 </div>
               </div>
               <div className="flex items-center justify-between font-body text-[10px] text-white/60">
-                <span>{fmtTime(progress.elapsed)}</span>
+                <span>{fmtTime(scrub !== null ? scrub * progress.total : progress.elapsed)}</span>
                 <span className="truncate px-2">{progress.label ?? ''}</span>
-                <span>-{fmtTime(Math.max(0, progress.total - progress.elapsed))}</span>
+                <span>
+                  -{fmtTime(Math.max(0, progress.total - (scrub !== null ? scrub * progress.total : progress.elapsed)))}
+                </span>
               </div>
             </div>
           )}
