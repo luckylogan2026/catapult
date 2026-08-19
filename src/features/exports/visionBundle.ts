@@ -70,6 +70,9 @@ export function referencedAssetIds(board: Board): Set<string> {
   for (const pl of board.playlists) {
     if (pl.backgroundTrackAssetId) ids.add(pl.backgroundTrackAssetId);
   }
+  for (const rec of board.meditationLibrary ?? []) {
+    ids.add(rec.assetId);
+  }
   return ids;
 }
 
