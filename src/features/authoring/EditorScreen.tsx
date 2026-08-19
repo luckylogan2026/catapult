@@ -25,6 +25,7 @@ import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets'
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { RecordButton } from './RecordButton';
 import { useSyncEngine, ConflictDialog } from '../sync/SyncSection';
+import { MeditationLibraryPanel } from './MeditationLibraryPanel';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
 import type { PlaylistId } from '../../domain/types';
 
@@ -48,6 +49,7 @@ function EditorInner() {
   const [snapLines, setSnapLines] = useState<SnapLines | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [playing, setPlaying] = useState<PlaylistId | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
@@ -247,6 +249,15 @@ function EditorInner() {
                   </select>
                 )}
                 {def.pageAudio && <PageAudioControl page={page} />}
+                {def.pageAudio && (
+                  <button
+                    type="button"
+                    className="rounded border border-text-muted/30 px-2 py-1 font-body text-xs text-text-muted hover:text-text"
+                    onClick={() => setLibraryOpen(true)}
+                  >
+                    {strings.meditation.libraryTitle}
+                  </button>
+                )}
                 {getPageTypeDef(page.type)
                   .templates.find((t) => t.id === page.templateId)
                   ?.slots.some((sl) => sl.id === 'background' && sl.kind === 'media') && (
@@ -467,6 +478,8 @@ function EditorInner() {
       )}
 
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} syncEngine={syncEngine} />}
+
+      {libraryOpen && <MeditationLibraryPanel onClose={() => setLibraryOpen(false)} />}
 
       <ConflictDialog engine={syncEngine} />
 

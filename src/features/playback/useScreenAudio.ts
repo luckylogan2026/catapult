@@ -32,6 +32,10 @@ function sourceForScreen(screen: Screen | undefined): { src: Source; tap: boolea
   // The intro's audio does not carry into the affirmation screens; its
   // background image does, but sound stops when its page is left.
   const page = screen.page;
+  // A configured meditation sequence owns its page's audio entirely.
+  if (screen.kind === 'page' && (page.meditation?.slots?.length ?? 0) > 0) {
+    return { src: null, tap: false, page };
+  }
   if (page.narrationAssetId) {
     return {
       src: { assetId: page.narrationAssetId, loop: page.audioLoop ?? false },

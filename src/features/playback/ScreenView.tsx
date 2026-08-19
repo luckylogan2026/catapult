@@ -19,6 +19,7 @@ import { Teleprompter } from './Teleprompter';
 import { VisionFillView } from './VisionFillView';
 import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
 import { appearanceVars } from '../../theme/pageAppearance';
+import { MeditationPlayer } from './MeditationPlayer';
 import { FormattedText } from '../authoring/FormattedText';
 
 // One playback screen. Fixed-canvas pages scale to fit with the ambient
@@ -92,12 +93,14 @@ export function ScreenView({
   active = true,
   paused = false,
   onRollEnd,
+  onVoiceActive,
 }: {
   board: Board;
   screen: Screen;
   active?: boolean;
   paused?: boolean;
   onRollEnd?: () => void;
+  onVoiceActive?: (a: boolean) => void;
 }) {
   const portrait = useIsPortrait();
   if (screen.kind === 'page') {
@@ -127,6 +130,11 @@ export function ScreenView({
         <div className="relative h-full w-full" style={appearanceVars(screen.page)}>
           <Backdrop screen={screen} />
           <TextFlowView page={screen.page} />
+          {screen.page.type === 'asp-process' && active && (
+            <div className="pointer-events-none absolute inset-x-3 bottom-6">
+              <MeditationPlayer page={screen.page} onVoiceActive={onVoiceActive} />
+            </div>
+          )}
         </div>
       );
     }

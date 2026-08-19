@@ -306,6 +306,7 @@ export function PlaybackScreen({
               active={i === index}
               paused={paused}
               onRollEnd={i === index && autoAdvance && !paused ? () => advance() : undefined}
+              onVoiceActive={onForeground}
             />
           </div>
         );

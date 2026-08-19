@@ -121,6 +121,8 @@ export type Page = {
   rollSpeed?: 'slow' | 'normal' | 'fast';
   /** Light rendering for this page, over the dark theme default. */
   appearance?: 'dark' | 'light';
+  /** The meditation builder on meditation pages. */
+  meditation?: MeditationConfig;
   /** Computed ambient letterbox fill, cached. Recomputed when media changes. */
   backdrop?: { color: string; blurDataUri: string };
 };
@@ -155,6 +157,28 @@ export type MasterAffirmation = {
   text: string;
   audioAssetId?: string;
   active: boolean;
+};
+
+/** A named recording in the meditation library, curated in the editor. */
+export type LibraryRecording = {
+  id: string;
+  name: string;
+  assetId: string;
+};
+
+/** One meditation sequence slot: a library recording, or timed silence. */
+export type MeditationSlot =
+  | { kind: 'recording'; libraryId: string }
+  | { kind: 'silence'; minutes: number };
+
+/** The meditation builder configuration, persisted and synced. */
+export type MeditationConfig = {
+  slots: MeditationSlot[];
+  musicLibraryId?: string;
+  /** 0..1, default 0.5. */
+  musicVolume?: number;
+  /** Music dips under voice segments when set; constant otherwise. */
+  musicDuck?: boolean;
 };
 
 export type Affirmation = {
@@ -255,6 +279,7 @@ export type Board = {
   pages: Page[];
   affirmations: Affirmation[];
   masterAffirmations?: MasterAffirmation[];
+  meditationLibrary?: LibraryRecording[];
   playlists: Playlist[];
   streak: StreakRecord;
 };
