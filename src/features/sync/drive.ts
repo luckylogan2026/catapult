@@ -249,6 +249,9 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
       return { kind: 'pushed', assetsUploaded: uploaded };
     }
 
+    if (!files.some((f) => f.name === 'Journal') && (board.streak?.completions?.length ?? 0) > 0) {
+      await syncJournalSheet(board, folderId, files);
+    }
     return { kind: 'idle' };
   } catch (err) {
     return { kind: 'error', message: err instanceof Error ? err.message : 'sync failed' };
