@@ -271,19 +271,20 @@ function EditorInner() {
                   </label>
                 )}
                 {def.textFlow && def.authoring === undefined && (
-                  <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
-                    <input
-                      type="checkbox"
-                      checked={page.appearance === 'light'}
-                      onChange={(ev) =>
-                        mutate((b) =>
-                          updatePage(b, page.id, { appearance: ev.target.checked ? 'light' : undefined }),
-                        )
-                      }
-                      className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
-                    />
-                    {e.lightPage}
-                  </label>
+                  <button
+                    type="button"
+                    title={e.lightPage}
+                    onClick={() =>
+                      mutate((b) =>
+                        updatePage(b, page.id, {
+                          appearance: page.appearance === 'light' ? undefined : 'light',
+                        }),
+                      )
+                    }
+                    className="rounded border border-text-muted/30 px-2 py-1 font-body text-sm leading-none text-text-muted hover:text-text"
+                  >
+                    {page.appearance === 'light' ? '☀' : '☾'}
+                  </button>
                 )}
                 {def.textFlow && def.authoring === undefined && (
                   <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">

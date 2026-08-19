@@ -1,4 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+
+function useIsPortrait(): boolean {
+  const [portrait, setPortrait] = useState(() => window.matchMedia('(orientation: portrait)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: portrait)');
+    const onChange = () => setPortrait(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return portrait;
+}
 import { CANVAS_H, CANVAS_W, type Block, type Board } from '../../domain/types';
 import type { Screen } from './screens';
 import { PageView } from '../authoring/PageView';
@@ -88,6 +99,7 @@ export function ScreenView({
   paused?: boolean;
   onRollEnd?: () => void;
 }) {
+  const portrait = useIsPortrait();
   if (screen.kind === 'page') {
     if (screen.textFlow) {
       const bg = screen.page.blocks.find((b) => b.slotId === 'background' && b.assetId);
@@ -96,7 +108,15 @@ export function ScreenView({
           <div className="relative h-full w-full overflow-hidden" style={appearanceVars(screen.page)}>
             <Backdrop screen={screen} />
             {bg && <FullBleedMedia block={bg} />}
-            {bg && <div className="absolute inset-0 bg-black/45" />}
+            {bg && (
+              <div
+                className={
+                  screen.page.appearance === 'light'
+                    ? 'absolute inset-0 bg-white/70'
+                    : 'absolute inset-0 bg-black/45'
+                }
+              />
+            )}
             <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd}>
               <TextFlowContent page={screen.page} />
             </Teleprompter>
@@ -118,7 +138,7 @@ export function ScreenView({
     const bgBlock = bgSlot
       ? screen.page.blocks.find((b) => b.slotId === 'background' && b.assetId)
       : undefined;
-    if (bgBlock) {
+    if (bgBlock && portrait) {
       const slotOrder = new Map(template.slots.map((s, i) => [s.id, i]));
       const texts = screen.page.blocks
         .filter((b) => b.kind === 'text' && (b.text ?? '').trim())
@@ -148,7 +168,7 @@ export function ScreenView({
         </div>
       );
     }
-    if (def.cellExpansion) {
+    if (def.cellExpansion && portrait) {
       const cells = screen.page.blocks
         .filter((b) => b.slotId?.startsWith('cell-') && b.assetId)
         .sort((a, b) => (a.slotId ?? '').localeCompare(b.slotId ?? '', undefined, { numeric: true }));
@@ -163,9 +183,15 @@ export function ScreenView({
   }
 
   if (screen.kind === 'cell') {
+    // On wide screens the whole picture shows against the ambient
+    // backdrop instead of cropping into the frame; an explicit Fill
+    // choice on the block still wins.
+    const cellBlock =
+      !portrait && !screen.block.fit ? { ...screen.block, fit: 'contain' as const } : screen.block;
     return (
       <div className="relative h-full w-full bg-black">
-        <FullBleedMedia block={screen.block} />
+        <Backdrop screen={screen} />
+        <FullBleedMedia block={cellBlock} />
       </div>
     );
   }
