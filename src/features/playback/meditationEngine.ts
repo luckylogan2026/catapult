@@ -43,6 +43,7 @@ function segLength(seg: LoadedSegment): number {
 export class MeditationEngine {
   private ctx: AudioContext | null = null;
   private dest: MediaStreamAudioDestinationNode | null = null;
+  private master: GainNode | null = null;
   private element: HTMLAudioElement | null = null;
   private loaded: LoadedSegment[] = [];
   private music: { buffer: AudioBuffer; volume: number; duck: boolean } | null = null;
@@ -67,7 +68,10 @@ export class MeditationEngine {
     this.stop();
     const ctx = new AudioContext();
     this.ctx = ctx;
+    await ctx.resume().catch(() => {});
     this.dest = ctx.createMediaStreamDestination();
+    this.master = ctx.createGain();
+    this.master.connect(this.dest);
 
     const decode = async (assetId: string): Promise<AudioBuffer | null> => {
       const asset = await db.assets.get(assetId);
@@ -99,20 +103,36 @@ export class MeditationEngine {
     }
 
     // Output first, confirmed flowing, then schedule: a live stream has
-    // no rewind, so sound produced before the element runs is lost.
+    // no rewind, so sound produced before the element runs is lost. The
+    // element lives in the DOM because Android silently drops detached
+    // stream elements. If the element cannot be proven flowing, the
+    // master bus retargets straight to the speakers, trading screen-off
+    // support for guaranteed sound this session.
     const el = new Audio();
     el.srcObject = this.dest.stream;
+    el.style.display = 'none';
+    document.body.appendChild(el);
     this.element = el;
     await el.play().catch(() => {});
     await new Promise<void>((resolve) => {
-      const done = () => resolve();
-      if (!el.paused && el.currentTime > 0) done();
-      else {
-        el.addEventListener('playing', done, { once: true });
-        window.setTimeout(done, 700);
-      }
+      const started = performance.now();
+      const check = () => {
+        if (this.ctx !== ctx) return resolve();
+        if (!el.paused && el.currentTime > 0.05) return resolve();
+        if (performance.now() - started > 1200) return resolve();
+        window.setTimeout(check, 120);
+      };
+      check();
     });
-    await new Promise((r) => window.setTimeout(r, 150));
+    if (this.ctx !== ctx) return;
+    if (el.paused || el.currentTime <= 0.05) {
+      // Element output unavailable: go direct.
+      this.master.disconnect();
+      this.master.connect(ctx.destination);
+      el.remove();
+      this.element = null;
+    }
+    await new Promise((r) => window.setTimeout(r, 100));
     if (this.ctx !== ctx) return;
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata(meta);
@@ -175,7 +195,7 @@ export class MeditationEngine {
       const src = ctx.createBufferSource();
       src.buffer = this.music.buffer;
       src.loop = true;
-      src.connect(gain).connect(dest);
+      src.connect(gain).connect(this.master ?? dest);
       src.start(startAt, this.offsetBase % this.music.buffer.duration);
       this.musicSource = src;
       this.musicGain = gain;
@@ -200,7 +220,7 @@ export class MeditationEngine {
         gainNode.gain.value = seg.gain;
         const src = ctx.createBufferSource();
         src.buffer = seg.buffer;
-        src.connect(gainNode).connect(dest);
+        src.connect(gainNode).connect(this.master ?? dest);
         src.start(cursor, into);
         this.voiceNodes.push(src);
         const segStart = cursor;
@@ -286,8 +306,12 @@ export class MeditationEngine {
     this.contentTotal = 0;
     this.offsetBase = 0;
     this.element?.pause();
-    if (this.element) this.element.srcObject = null;
+    if (this.element) {
+      this.element.srcObject = null;
+      this.element.remove();
+    }
     this.element = null;
+    this.master = null;
     this.dest = null;
     void this.ctx?.close().catch(() => {});
     this.ctx = null;
