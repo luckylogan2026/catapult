@@ -164,6 +164,8 @@ export type LibraryRecording = {
   id: string;
   name: string;
   assetId: string;
+  /** What this recording is, for grouped menus in the player. */
+  role?: 'opening' | 'body' | 'closing' | 'full' | 'music' | 'other';
 };
 
 /** One meditation sequence slot: a library recording, or timed silence. */

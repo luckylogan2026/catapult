@@ -380,6 +380,11 @@
     "play": "Begin",
     "stop": "Stop",
     "loading": "Preparing",
-    "noLibrary": "Add recordings to the meditation library in the editor first."
+    "noLibrary": "Add recordings to the meditation library in the editor first.",
+    "roleOpening": "Opening",
+    "roleBody": "Body",
+    "roleClosing": "Closing",
+    "roleMusic": "Music",
+    "roleFull": "Full"
   }
 }

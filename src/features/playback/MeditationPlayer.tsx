@@ -7,6 +7,24 @@ import { MeditationEngine, type EngineSegment } from './meditationEngine';
 const m = strings.meditation;
 const MAX_SLOTS = 5;
 
+const ROLE_ORDER = ['opening', 'body', 'closing', 'full', 'music'] as const;
+const ROLE_LABELS: Record<string, string> = {
+  opening: m.roleOpening,
+  body: m.roleBody,
+  closing: m.roleClosing,
+  full: m.roleFull,
+  music: m.roleMusic,
+};
+
+function groupedOptions(library: { id: string; name: string; role?: string }[]) {
+  const roleOf = (r: { role?: string }) => (r.role && r.role !== 'other' ? r.role : 'full');
+  return ROLE_ORDER.map((role) => ({
+    role,
+    label: ROLE_LABELS[role],
+    items: library.filter((r) => roleOf(r) === role),
+  })).filter((g) => g.items.length);
+}
+
 // The meditation builder on the player: up to five slots, each a library
 // recording or a timed silence, plus optional music with a volume
 // slider. The configuration persists on the page and syncs. Phone-first:
@@ -120,10 +138,14 @@ export function MeditationPlayer({
                 >
                   <option value="empty">{m.slotEmpty}</option>
                   <option value="silence">{m.slotSilence}</option>
-                  {library.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
+                  {groupedOptions(library).map((g) => (
+                    <optgroup key={g.role} label={g.label}>
+                      {g.items.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 {slot?.kind === 'silence' && (
@@ -161,10 +183,14 @@ export function MeditationPlayer({
               className="min-w-0 grow rounded border border-white/20 bg-black/40 px-2 py-1.5 font-body text-sm text-white"
             >
               <option value="">{m.musicNone}</option>
-              {library.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
+              {groupedOptions([...library].sort((a, b) => ((a.role ?? '') === 'music' ? -1 : (b.role ?? '') === 'music' ? 1 : 0))).map((g) => (
+                <optgroup key={g.role} label={g.label}>
+                  {g.items.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
