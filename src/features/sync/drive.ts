@@ -161,12 +161,48 @@ async function listFolder(folderId: string): Promise<RemoteFile[]> {
   return out;
 }
 
+const RESUMABLE_THRESHOLD = 4 * 1024 * 1024;
+const CHUNK = 8 * 1024 * 1024; // a multiple of 256 KiB, as the API requires
+
 async function uploadFile(
   folderId: string,
   name: string,
   blob: Blob,
   existingId?: string,
 ): Promise<void> {
+  // Large files go through the resumable protocol in chunks; the
+  // single-shot multipart request is unreliable beyond a few megabytes
+  // and music tracks can be hundreds.
+  if (blob.size > RESUMABLE_THRESHOLD) {
+    const initUrl = existingId
+      ? `${UPLOAD}/files/${existingId}?uploadType=resumable`
+      : `${UPLOAD}/files?uploadType=resumable`;
+    const init = await fetch(initUrl, {
+      method: existingId ? 'PATCH' : 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': blob.type || 'application/octet-stream',
+        'X-Upload-Content-Length': String(blob.size),
+      },
+      body: JSON.stringify(existingId ? {} : { name, parents: [folderId] }),
+    });
+    if (!init.ok) throw new Error(`resumable init failed: ${init.status}`);
+    const session = init.headers.get('Location');
+    if (!session) throw new Error('resumable session missing');
+    for (let start = 0; start < blob.size; start += CHUNK) {
+      const end = Math.min(start + CHUNK, blob.size);
+      const r = await fetch(session, {
+        method: 'PUT',
+        headers: { 'Content-Range': `bytes ${start}-${end - 1}/${blob.size}` },
+        body: blob.slice(start, end),
+      });
+      if (r.status === 308) continue;
+      if (r.ok) return;
+      throw new Error(`resumable chunk failed: ${r.status}`);
+    }
+    return;
+  }
   const meta = existingId ? {} : { name, parents: [folderId] };
   const boundary = 'catapult' + Math.random().toString(36).slice(2);
   const body = new Blob(
