@@ -17,7 +17,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function optionLabel(r: { name: string; description?: string }): string {
-  return r.description?.trim() ? `${r.name} · ${r.description.trim()}` : r.name;
+  return r.description?.trim() || r.name;
 }
 
 function groupedOptions(library: { id: string; name: string; role?: string; description?: string }[]) {
