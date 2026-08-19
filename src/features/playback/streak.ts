@@ -43,11 +43,18 @@ export function recordCompletion(
   completions: SessionCompletion[],
   playlistId: PlaylistId,
   note: string,
+  priorities = '',
 ): SessionCompletion[] {
   const date = localDate();
   const rest = completions.filter((c) => !(c.date === date && c.playlistId === playlistId));
   return [
     ...rest,
-    { date, playlistId, completedAt: new Date().toISOString(), note: note.trim() || undefined },
+    {
+      date,
+      playlistId,
+      completedAt: new Date().toISOString(),
+      note: note.trim() || undefined,
+      priorities: priorities.trim() || undefined,
+    },
   ];
 }

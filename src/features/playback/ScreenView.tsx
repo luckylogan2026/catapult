@@ -7,6 +7,7 @@ import { TextFlowView, TextFlowContent } from './TextFlowView';
 import { Teleprompter } from './Teleprompter';
 import { VisionFillView } from './VisionFillView';
 import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
+import { appearanceVars } from '../../theme/pageAppearance';
 import { FormattedText } from '../authoring/FormattedText';
 
 // One playback screen. Fixed-canvas pages scale to fit with the ambient
@@ -92,7 +93,7 @@ export function ScreenView({
       const bg = screen.page.blocks.find((b) => b.slotId === 'background' && b.assetId);
       if (screen.page.textRoll) {
         return (
-          <div className="relative h-full w-full overflow-hidden">
+          <div className="relative h-full w-full overflow-hidden" style={appearanceVars(screen.page)}>
             <Backdrop screen={screen} />
             {bg && <FullBleedMedia block={bg} />}
             {bg && <div className="absolute inset-0 bg-black/45" />}
@@ -103,7 +104,7 @@ export function ScreenView({
         );
       }
       return (
-        <div className="relative h-full w-full">
+        <div className="relative h-full w-full" style={appearanceVars(screen.page)}>
           <Backdrop screen={screen} />
           <TextFlowView page={screen.page} />
         </div>

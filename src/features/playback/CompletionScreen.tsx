@@ -39,6 +39,7 @@ export function CompletionScreen({
 }) {
   const { board, mutate } = useBoardContext();
   const [note, setNote] = useState('');
+  const [priorities, setPriorities] = useState('');
   const [listening, setListening] = useState(false);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const canDictate = typeof window !== 'undefined' && !!getRecognizer();
@@ -81,7 +82,7 @@ export function CompletionScreen({
     recRef.current?.stop();
     mutate((b) => ({
       ...b,
-      streak: { completions: recordCompletion(b.streak.completions, playlistId, note) },
+      streak: { completions: recordCompletion(b.streak.completions, playlistId, note, priorities) },
     }));
     onClose();
   };
@@ -93,6 +94,14 @@ export function CompletionScreen({
       <p className="font-body text-sm text-text-muted">
         {c.streakLabel} · {c.morningShort} {morning} · {c.eveningShort} {evening}
       </p>
+
+      <textarea
+        value={priorities}
+        onChange={(ev) => setPriorities(ev.target.value)}
+        placeholder={c.prioritiesPlaceholder}
+        rows={5}
+        className="w-full max-w-2xl resize-y rounded border border-text-muted/30 bg-surface/60 p-3 text-left font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
+      />
 
       <div className="relative w-full max-w-2xl">
         <textarea

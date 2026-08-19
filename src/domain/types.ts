@@ -119,6 +119,8 @@ export type Page = {
   textRoll?: boolean;
   /** Teleprompter pace for this page. Defaults to normal. */
   rollSpeed?: 'slow' | 'normal' | 'fast';
+  /** Light rendering for this page, over the dark theme default. */
+  appearance?: 'dark' | 'light';
   /** Computed ambient letterbox fill, cached. Recomputed when media changes. */
   backdrop?: { color: string; blurDataUri: string };
 };
@@ -224,8 +226,10 @@ export type SessionCompletion = {
   date: string;
   playlistId: PlaylistId;
   completedAt: string;
-  /** The single line of free text from the completion screen. */
+  /** The journal text from the completion screen. */
   note?: string;
+  /** The day's top priorities, from the completion screen. */
+  priorities?: string;
 };
 
 export type StreakRecord = {

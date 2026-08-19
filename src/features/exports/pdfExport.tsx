@@ -11,6 +11,7 @@ import { slotsOfPage } from '../authoring/boardOps';
 import { TextFlowContent } from '../playback/TextFlowView';
 import { PdfModeContext } from './pdfMode';
 import { brand } from '../../config';
+import { appearanceVars } from '../../theme/pageAppearance';
 
 // PDF export: each included page rasterizes at 2x through html-to-image
 // and lands on a US Letter portrait page. The 1275 x 1650 canvas maps
@@ -38,6 +39,7 @@ function PdfFlowPage({ page }: { page: Page }) {
         background: 'var(--tc-background)',
         color: 'var(--tc-text)',
         padding: 96,
+        ...appearanceVars(page),
       }}
     >
       <p style={{ fontFamily: 'var(--tc-font-heading)', fontSize: 84, fontWeight: 600, margin: 0 }}>

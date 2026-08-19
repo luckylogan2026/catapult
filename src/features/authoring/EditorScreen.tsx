@@ -274,6 +274,21 @@ function EditorInner() {
                   <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
                     <input
                       type="checkbox"
+                      checked={page.appearance === 'light'}
+                      onChange={(ev) =>
+                        mutate((b) =>
+                          updatePage(b, page.id, { appearance: ev.target.checked ? 'light' : undefined }),
+                        )
+                      }
+                      className="h-3.5 w-3.5 accent-[var(--tc-primary)]"
+                    />
+                    {e.lightPage}
+                  </label>
+                )}
+                {def.textFlow && def.authoring === undefined && (
+                  <label className="flex items-center gap-1.5 font-body text-xs text-text-muted">
+                    <input
+                      type="checkbox"
                       checked={page.textRoll ?? false}
                       onChange={(ev) => mutate((b) => updatePage(b, page.id, { textRoll: ev.target.checked }))}
                       className="h-3.5 w-3.5 accent-[var(--tc-primary)]"

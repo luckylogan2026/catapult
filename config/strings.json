@@ -111,7 +111,8 @@
     "recordStart": "Record",
     "recordStop": "Stop",
     "recordError": "Microphone access was refused.",
-    "kenBurnsLabel": "Slow motion drift"
+    "kenBurnsLabel": "Slow motion drift",
+    "lightPage": "Light page"
   },
   "import": {
     "dropHere": "Drop images or video here",
@@ -339,7 +340,8 @@
     "notePlaceholder": "One line about today",
     "dictateStart": "Speak instead",
     "dictateStop": "Stop listening",
-    "finish": "Save and finish"
+    "finish": "Save and finish",
+    "prioritiesPlaceholder": "Top 3 priorities for today"
   },
   "sync": {
     "title": "Google Drive sync",

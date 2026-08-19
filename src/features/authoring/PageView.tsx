@@ -9,6 +9,7 @@ import { CanvasBlockFrame, type SnapLines } from './CanvasBlockFrame';
 import { textStyleCss } from './blockStyle';
 import { FormattedText } from './FormattedText';
 import { fontStack } from '../../theme/fontChoices';
+import { appearanceVars } from '../../theme/pageAppearance';
 import { swapSlots, updateBlock } from './boardOps';
 import { useBoardContext } from '../board/BoardContext';
 
@@ -266,7 +267,7 @@ export function PageView({
   return (
     <div
       className="relative bg-background"
-      style={{ width: CANVAS_W, height: pageH, ...fontVars }}
+      style={{ width: CANVAS_W, height: pageH, ...fontVars, ...appearanceVars(page) }}
       onClick={() => interactive && onSelectBlock?.(null)}
     >
       {body}
