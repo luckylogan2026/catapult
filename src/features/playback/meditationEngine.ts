@@ -1,4 +1,5 @@
 import { db } from '../../db/db';
+import { assetObjectUrl } from '../../assetPipeline/importAssets';
 
 // The gapless meditation engine. Segments decode into one AudioContext
 // and are scheduled sample-accurately, silences being scheduled gaps.
@@ -46,8 +47,9 @@ export class MeditationEngine {
   private master: GainNode | null = null;
   private element: HTMLAudioElement | null = null;
   private loaded: LoadedSegment[] = [];
-  private music: { buffer: AudioBuffer; volume: number; duck: boolean } | null = null;
-  private musicSource: AudioBufferSourceNode | null = null;
+  private music: { volume: number; duck: boolean } | null = null;
+  private musicElement: HTMLAudioElement | null = null;
+  private musicNode: MediaElementAudioSourceNode | null = null;
   private musicGain: GainNode | null = null;
   private voiceNodes: AudioBufferSourceNode[] = [];
   private ticker: number | undefined;
@@ -97,9 +99,25 @@ export class MeditationEngine {
     this.contentTotal = this.loaded.reduce((s, seg) => s + segLength(seg), 0);
 
     if (music) {
-      const buffer = await decode(music.assetId);
+      // Music streams through an element instead of decoding: a four
+      // hour track plays with seconds of memory, and the session length
+      // caps how much of it is ever heard. It still routes through the
+      // graph, so the slider, ducking, and the single output remain.
+      const asset = await db.assets.get(music.assetId);
       if (this.ctx !== ctx) return;
-      if (buffer) this.music = { buffer, volume: music.volume, duck: music.duck };
+      if (asset) {
+        const musicEl = new Audio();
+        musicEl.src = assetObjectUrl(asset.id, asset.blob);
+        musicEl.loop = true;
+        musicEl.style.display = 'none';
+        document.body.appendChild(musicEl);
+        this.musicElement = musicEl;
+        this.musicNode = ctx.createMediaElementSource(musicEl);
+        this.musicGain = ctx.createGain();
+        this.musicGain.gain.value = music.volume;
+        this.musicNode.connect(this.musicGain).connect(this.master);
+        this.music = { volume: music.volume, duck: music.duck };
+      }
     }
 
     // Output first, confirmed flowing, then schedule: a live stream has
@@ -176,29 +194,21 @@ export class MeditationEngine {
       }
     }
     this.voiceNodes = [];
-    try {
-      this.musicSource?.stop();
-    } catch {
-      // already ended
-    }
-    this.musicSource = null;
-    this.musicGain = null;
     this.timeline = [];
 
     const startAt = ctx.currentTime + 0.5;
     this.startAtTime = startAt;
     this.offsetBase = Math.min(Math.max(0, offset), this.contentTotal);
 
-    if (this.music) {
-      const gain = ctx.createGain();
-      gain.gain.value = this.music.volume;
-      const src = ctx.createBufferSource();
-      src.buffer = this.music.buffer;
-      src.loop = true;
-      src.connect(gain).connect(this.master ?? dest);
-      src.start(startAt, this.offsetBase % this.music.buffer.duration);
-      this.musicSource = src;
-      this.musicGain = gain;
+    if (this.music && this.musicElement && this.musicGain) {
+      const dur = this.musicElement.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        this.musicElement.currentTime = this.offsetBase % dur;
+      }
+      void this.musicElement.play().catch(() => {});
+      // Reset any old duck automation before the fresh pass writes new.
+      this.musicGain.gain.cancelScheduledValues(ctx.currentTime);
+      this.musicGain.gain.setValueAtTime(this.music.volume, ctx.currentTime);
     }
 
     let contentPos = 0;
@@ -272,12 +282,14 @@ export class MeditationEngine {
 
   async pause(): Promise<void> {
     await this.ctx?.suspend();
+    this.musicElement?.pause();
     this.element?.pause();
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
   }
 
   async resume(): Promise<void> {
     await this.ctx?.resume();
+    await this.musicElement?.play().catch(() => {});
     await this.element?.play().catch(() => {});
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
   }
@@ -294,12 +306,11 @@ export class MeditationEngine {
       }
     }
     this.voiceNodes = [];
-    try {
-      this.musicSource?.stop();
-    } catch {
-      // already ended
-    }
-    this.musicSource = null;
+    this.musicElement?.pause();
+    this.musicElement?.remove();
+    this.musicElement = null;
+    this.musicNode?.disconnect();
+    this.musicNode = null;
     this.musicGain = null;
     this.music = null;
     this.loaded = [];
