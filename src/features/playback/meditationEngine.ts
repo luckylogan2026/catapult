@@ -1,12 +1,14 @@
 import { db } from '../../db/db';
 
 // The gapless meditation engine. Segments decode into one AudioContext
-// and are scheduled back to back with sample accuracy, silences being
-// scheduled gaps. Output routes through a MediaStream into a real audio
-// element, which keeps playback alive with the phone screen off and
-// carries Media Session metadata. Loudness is equalized per segment: a
-// quiet take is lifted and a loud one brought down toward a common
-// level, with the boost capped so hiss is not amplified.
+// and are scheduled sample-accurately, silences being scheduled gaps.
+// Output routes through a MediaStream into a real audio element, which
+// keeps playback alive with the phone screen off and carries Media
+// Session metadata; the element must be confirmed flowing before
+// anything is scheduled, because a live stream has no rewind. Loudness
+// is equalized per voice segment with the boost capped; music is never
+// equalized, only the user's slider. Seeking reschedules the chain from
+// any point, starting mid-buffer where needed.
 
 export type EngineSegment =
   | { kind: 'audio'; assetId: string; label?: string }
@@ -24,29 +26,34 @@ function measureGain(buffer: AudioBuffer): number {
   let count = 0;
   for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
     const data = buffer.getChannelData(ch);
-    // Sample every 32nd frame; plenty for an RMS estimate.
     for (let i = 0; i < data.length; i += 32) {
       sum += data[i] * data[i];
       count++;
     }
   }
   const rms = Math.sqrt(sum / Math.max(1, count));
-  if (rms < 0.0005) return 1; // effectively silent, leave it alone
+  if (rms < 0.0005) return 1;
   return Math.min(MAX_BOOST, TARGET_RMS / rms);
+}
+
+function segLength(seg: LoadedSegment): number {
+  return seg.kind === 'silence' ? seg.seconds : seg.buffer.duration;
 }
 
 export class MeditationEngine {
   private ctx: AudioContext | null = null;
+  private dest: MediaStreamAudioDestinationNode | null = null;
   private element: HTMLAudioElement | null = null;
+  private loaded: LoadedSegment[] = [];
+  private music: { buffer: AudioBuffer; volume: number; duck: boolean } | null = null;
   private musicSource: AudioBufferSourceNode | null = null;
   private musicGain: GainNode | null = null;
   private voiceNodes: AudioBufferSourceNode[] = [];
   private ticker: number | undefined;
-  private schedule: { start: number; end: number }[] = [];
-  private timeline: { start: number; end: number; label?: string }[] = [];
+  private timeline: { start: number; end: number; voice: boolean; label?: string }[] = [];
   private startAtTime = 0;
-  private contentEnd = 0;
-  private totalEnd = 0;
+  private offsetBase = 0;
+  private contentTotal = 0;
   private lastVoiceState = false;
 
   onEnded: (() => void) | null = null;
@@ -60,7 +67,7 @@ export class MeditationEngine {
     this.stop();
     const ctx = new AudioContext();
     this.ctx = ctx;
-    const dest = ctx.createMediaStreamDestination();
+    this.dest = ctx.createMediaStreamDestination();
 
     const decode = async (assetId: string): Promise<AudioBuffer | null> => {
       const asset = await db.assets.get(assetId);
@@ -72,23 +79,29 @@ export class MeditationEngine {
       }
     };
 
-    const loaded: LoadedSegment[] = [];
+    this.loaded = [];
     for (const seg of segments) {
       if (seg.kind === 'silence') {
-        loaded.push({ kind: 'silence', seconds: seg.seconds, label: seg.label });
+        this.loaded.push({ kind: 'silence', seconds: seg.seconds, label: seg.label });
       } else {
         const buffer = await decode(seg.assetId);
-        if (buffer) loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label });
+        if (buffer)
+          this.loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label });
       }
     }
-    if (this.ctx !== ctx) return; // stopped while decoding
+    if (this.ctx !== ctx) return;
+    this.contentTotal = this.loaded.reduce((s, seg) => s + segLength(seg), 0);
 
-    // The output element starts FIRST and must be confirmed flowing
-    // before anything is scheduled: a live stream has no rewind, so
-    // sound produced before the element runs is lost forever. This was
-    // audible as the first seconds going missing.
+    if (music) {
+      const buffer = await decode(music.assetId);
+      if (this.ctx !== ctx) return;
+      if (buffer) this.music = { buffer, volume: music.volume, duck: music.duck };
+    }
+
+    // Output first, confirmed flowing, then schedule: a live stream has
+    // no rewind, so sound produced before the element runs is lost.
     const el = new Audio();
-    el.srcObject = dest.stream;
+    el.srcObject = this.dest.stream;
     this.element = el;
     await el.play().catch(() => {});
     await new Promise<void>((resolve) => {
@@ -100,72 +113,26 @@ export class MeditationEngine {
       }
     });
     await new Promise((r) => window.setTimeout(r, 150));
-    if (this.ctx !== ctx) return; // stopped during startup
+    if (this.ctx !== ctx) return;
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata(meta);
-      navigator.mediaSession.setActionHandler('play', () => void el.play());
-      navigator.mediaSession.setActionHandler('pause', () => el.pause());
+      navigator.mediaSession.setActionHandler('play', () => void this.resume());
+      navigator.mediaSession.setActionHandler('pause', () => void this.pause());
     }
 
-    // Background music: its own loop and gain, live-adjustable.
-    if (music) {
-      const buffer = await decode(music.assetId);
-      if (this.ctx !== ctx) return;
-      if (buffer) {
-        const gain = ctx.createGain();
-        gain.gain.value = music.volume;
-        const src = ctx.createBufferSource();
-        src.buffer = buffer;
-        src.loop = true;
-        src.connect(gain).connect(dest);
-        src.start();
-        this.musicSource = src;
-        this.musicGain = gain;
-      }
-    }
+    this.scheduleFrom(0);
 
-    // Schedule the voice chain, sample-accurate, with duck automation.
-    const startAt = ctx.currentTime + 0.25;
-    this.startAtTime = startAt;
-    let cursor = startAt;
-    for (const seg of loaded) {
-      if (seg.kind === 'silence') {
-        this.timeline.push({ start: cursor, end: cursor + seg.seconds, label: seg.label });
-        cursor += seg.seconds;
-        continue;
-      }
-      const gainNode = ctx.createGain();
-      gainNode.gain.value = seg.gain;
-      const src = ctx.createBufferSource();
-      src.buffer = seg.buffer;
-      src.connect(gainNode).connect(dest);
-      src.start(cursor);
-      this.voiceNodes.push(src);
-      const segStart = cursor;
-      const segEnd = cursor + seg.buffer.duration;
-      if (music?.duck && this.musicGain) {
-        const g = this.musicGain.gain;
-        g.setTargetAtTime(music.volume * 0.3, Math.max(ctx.currentTime, segStart - 0.3), 0.15);
-        g.setTargetAtTime(music.volume, segEnd, 0.4);
-      }
-      this.schedule.push({ start: segStart, end: segEnd });
-      this.timeline.push({ start: segStart, end: segEnd, label: seg.label });
-      cursor = segEnd;
-    }
-
-    // Everything follows the context clock, so suspending the context
-    // pauses progress tracking along with the sound.
-    this.contentEnd = cursor;
-    this.totalEnd = cursor + 0.3 + (music ? 1.5 : 0);
     this.ticker = window.setInterval(() => {
       if (!this.ctx || this.ctx.state === 'suspended') return;
       const t = this.ctx.currentTime;
-      const voice = this.schedule.some((seg) => t >= seg.start && t < seg.end);
+      const voice = this.timeline.some((seg) => seg.voice && t >= seg.start && t < seg.end);
       if (voice !== this.lastVoiceState) {
         this.lastVoiceState = voice;
         this.onVoiceActive?.(voice);
       }
-      if (t >= this.totalEnd) {
+      const endAt =
+        this.startAtTime + (this.contentTotal - this.offsetBase) + 0.3 + (this.music ? 1.5 : 0);
+      if (t >= endAt) {
         this.onVoiceActive?.(false);
         this.onEnded?.();
         this.stop();
@@ -173,19 +140,106 @@ export class MeditationEngine {
     }, 250);
   }
 
-  setMusicVolume(volume: number): void {
-    if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.05);
+  // Clears scheduled sources and reschedules everything from a content
+  // offset in seconds, starting mid-buffer where the offset lands
+  // inside a recording.
+  private scheduleFrom(offset: number): void {
+    const ctx = this.ctx;
+    const dest = this.dest;
+    if (!ctx || !dest) return;
+
+    for (const n of this.voiceNodes) {
+      try {
+        n.stop();
+      } catch {
+        // already ended
+      }
+    }
+    this.voiceNodes = [];
+    try {
+      this.musicSource?.stop();
+    } catch {
+      // already ended
+    }
+    this.musicSource = null;
+    this.musicGain = null;
+    this.timeline = [];
+
+    const startAt = ctx.currentTime + 0.2;
+    this.startAtTime = startAt;
+    this.offsetBase = Math.min(Math.max(0, offset), this.contentTotal);
+
+    if (this.music) {
+      const gain = ctx.createGain();
+      gain.gain.value = this.music.volume;
+      const src = ctx.createBufferSource();
+      src.buffer = this.music.buffer;
+      src.loop = true;
+      src.connect(gain).connect(dest);
+      src.start(startAt, this.offsetBase % this.music.buffer.duration);
+      this.musicSource = src;
+      this.musicGain = gain;
+    }
+
+    let contentPos = 0;
+    let cursor = startAt;
+    for (const seg of this.loaded) {
+      const len = segLength(seg);
+      const segEndContent = contentPos + len;
+      if (segEndContent <= this.offsetBase) {
+        contentPos = segEndContent;
+        continue;
+      }
+      const into = Math.max(0, this.offsetBase - contentPos);
+      const remaining = len - into;
+      if (seg.kind === 'silence') {
+        this.timeline.push({ start: cursor, end: cursor + remaining, voice: false, label: seg.label });
+        cursor += remaining;
+      } else {
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = seg.gain;
+        const src = ctx.createBufferSource();
+        src.buffer = seg.buffer;
+        src.connect(gainNode).connect(dest);
+        src.start(cursor, into);
+        this.voiceNodes.push(src);
+        const segStart = cursor;
+        const segEnd = cursor + remaining;
+        if (this.music?.duck && this.musicGain) {
+          const g = this.musicGain.gain;
+          g.setTargetAtTime(this.music.volume * 0.3, Math.max(ctx.currentTime, segStart - 0.3), 0.15);
+          g.setTargetAtTime(this.music.volume, segEnd, 0.4);
+        }
+        this.timeline.push({ start: segStart, end: segEnd, voice: true, label: seg.label });
+        cursor = segEnd;
+      }
+      contentPos = segEndContent;
     }
   }
 
+  /** Jump to a content position in seconds and keep playing. */
+  async seek(seconds: number): Promise<void> {
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') await this.resume();
+    this.scheduleFrom(seconds);
+  }
+
   progress(): { elapsed: number; total: number; label?: string } | null {
-    if (!this.ctx || !this.contentEnd) return null;
+    if (!this.ctx || !this.contentTotal) return null;
     const t = this.ctx.currentTime;
-    const total = this.contentEnd - this.startAtTime;
-    const elapsed = Math.min(total, Math.max(0, t - this.startAtTime));
+    const elapsed = Math.min(
+      this.contentTotal,
+      Math.max(0, this.offsetBase + (t - this.startAtTime)),
+    );
     const seg = this.timeline.find((s) => t >= s.start && t < s.end);
-    return { elapsed, total, label: seg?.label };
+    return { elapsed, total: this.contentTotal, label: seg?.label };
+  }
+
+  setMusicVolume(volume: number): void {
+    if (this.music) this.music.volume = volume;
+    if (this.musicGain && this.ctx) {
+      this.musicGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.05);
+    }
   }
 
   get playing(): boolean {
@@ -210,9 +264,7 @@ export class MeditationEngine {
 
   stop(): void {
     window.clearInterval(this.ticker);
-    this.schedule = [];
     this.timeline = [];
-    this.contentEnd = 0;
     this.lastVoiceState = false;
     for (const n of this.voiceNodes) {
       try {
@@ -229,9 +281,14 @@ export class MeditationEngine {
     }
     this.musicSource = null;
     this.musicGain = null;
+    this.music = null;
+    this.loaded = [];
+    this.contentTotal = 0;
+    this.offsetBase = 0;
     this.element?.pause();
     if (this.element) this.element.srcObject = null;
     this.element = null;
+    this.dest = null;
     void this.ctx?.close().catch(() => {});
     this.ctx = null;
     this.onVoiceActive?.(false);

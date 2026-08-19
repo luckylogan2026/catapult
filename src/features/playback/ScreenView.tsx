@@ -131,7 +131,7 @@ export function ScreenView({
           <Backdrop screen={screen} />
           <TextFlowView page={screen.page} />
           {screen.page.type === 'asp-process' && active && (
-            <div className="pointer-events-none absolute inset-x-3 bottom-6">
+            <div className="pointer-events-none absolute inset-x-3 top-1/2 -translate-y-1/2">
               <MeditationPlayer page={screen.page} onVoiceActive={onVoiceActive} />
             </div>
           )}

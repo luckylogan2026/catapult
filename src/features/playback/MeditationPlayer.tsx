@@ -283,13 +283,23 @@ export function MeditationPlayer({
 
           {playing && progress && (
             <div className="mt-2.5">
-              <div className="h-1 w-full overflow-hidden rounded-full bg-white/15">
-                <div
-                  className="h-1 rounded-full bg-primary"
-                  style={{ width: `${Math.min(100, (progress.elapsed / Math.max(1, progress.total)) * 100)}%` }}
-                />
+              <div
+                className="cursor-pointer py-1.5"
+                onClick={(ev) => {
+                  const r = ev.currentTarget.getBoundingClientRect();
+                  const frac = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
+                  void engineRef.current?.seek(frac * progress.total);
+                  setPausedUi(false);
+                }}
+              >
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+                  <div
+                    className="h-1.5 rounded-full bg-primary"
+                    style={{ width: `${Math.min(100, (progress.elapsed / Math.max(1, progress.total)) * 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-1 flex items-center justify-between font-body text-[11px] text-white/70">
+              <div className="flex items-center justify-between font-body text-[11px] text-white/70">
                 <span>{fmtTime(progress.elapsed)}</span>
                 <span className="truncate px-2">{progress.label ?? ''}</span>
                 <span>-{fmtTime(Math.max(0, progress.total - progress.elapsed))}</span>
@@ -309,10 +319,25 @@ export function MeditationPlayer({
             <div className="mt-2.5 flex gap-1.5">
               <button
                 type="button"
-                onClick={() => void togglePause()}
-                className="grow rounded bg-primary py-2 font-body text-sm font-medium text-background"
+                disabled={!pausedUi}
+                onClick={() => {
+                  const engine = engineRef.current;
+                  if (engine?.paused) {
+                    void engine.resume();
+                    setPausedUi(false);
+                  }
+                }}
+                className="grow rounded bg-primary py-2 font-body text-sm font-medium text-background disabled:opacity-40"
               >
-                {pausedUi ? m.resume : m.pause}
+                {m.play}
+              </button>
+              <button
+                type="button"
+                disabled={pausedUi}
+                onClick={() => void togglePause()}
+                className="grow rounded border border-white/25 py-2 font-body text-sm font-medium text-white disabled:opacity-40"
+              >
+                {m.pause}
               </button>
               <button
                 type="button"
