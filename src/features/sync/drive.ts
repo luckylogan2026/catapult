@@ -228,6 +228,13 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     }
 
     if (remote && remoteAhead && localAhead && remote.revision !== board.revision) {
+      // Two histories that carry the same content have nothing to argue
+      // about: record agreement and move on.
+      const strip = (b: Board) => JSON.stringify({ ...b, revision: 0, meta: { ...b.meta, lastEdited: '' } });
+      if (strip(remote) === strip(board)) {
+        await kvSet('lastSyncedRevision', Math.max(remote.revision, board.revision));
+        return { kind: 'idle' };
+      }
       return {
         kind: 'conflict',
         remoteBoard: remote,

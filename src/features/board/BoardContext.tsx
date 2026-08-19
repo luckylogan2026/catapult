@@ -61,7 +61,27 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   const undoRef = useRef<Board[]>([]);
   const redoRef = useRef<Board[]>([]);
   const savedTimer = useRef<number | undefined>(undefined);
+  const channelRef = useRef<BroadcastChannel | null>(null);
   const [, bump] = useReducer((x: number) => x + 1, 0);
+
+  // Cross-tab coordination on this device. A second open instance (the
+  // installed window plus a browser tab, say) must not fork the board's
+  // history; whoever saves last is adopted by the rest.
+  useEffect(() => {
+    const channel = new BroadcastChannel('board-sync');
+    channel.onmessage = (ev: MessageEvent<{ revision: number }>) => {
+      const current = boardRef.current;
+      if (!current || ev.data.revision <= current.revision) return;
+      void loadBoard().then((fresh) => {
+        if (fresh && fresh.revision > (boardRef.current?.revision ?? 0)) {
+          boardRef.current = fresh;
+          setBoard(fresh);
+        }
+      });
+    };
+    channelRef.current = channel;
+    return () => channel.close();
+  }, []);
 
   useEffect(() => {
     (async () => {
