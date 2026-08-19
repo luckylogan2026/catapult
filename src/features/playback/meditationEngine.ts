@@ -41,8 +41,10 @@ export class MeditationEngine {
   private musicSource: AudioBufferSourceNode | null = null;
   private musicGain: GainNode | null = null;
   private voiceNodes: AudioBufferSourceNode[] = [];
-  private endTimer: number | undefined;
-  private duckTimers: number[] = [];
+  private ticker: number | undefined;
+  private schedule: { start: number; end: number }[] = [];
+  private totalEnd = 0;
+  private lastVoiceState = false;
 
   onEnded: (() => void) | null = null;
   onVoiceActive: ((active: boolean) => void) | null = null;
@@ -117,20 +119,27 @@ export class MeditationEngine {
         g.setTargetAtTime(music.volume * 0.3, Math.max(ctx.currentTime, segStart - 0.3), 0.15);
         g.setTargetAtTime(music.volume, segEnd, 0.4);
       }
-      // Voice activity callbacks for the deck (hold auto-advance).
-      this.duckTimers.push(
-        window.setTimeout(() => this.onVoiceActive?.(true), (segStart - ctx.currentTime) * 1000),
-        window.setTimeout(() => this.onVoiceActive?.(false), (segEnd - ctx.currentTime) * 1000),
-      );
+      this.schedule.push({ start: segStart, end: segEnd });
       cursor = segEnd;
     }
 
-    const total = cursor - startAt;
-    this.endTimer = window.setTimeout(() => {
-      this.onVoiceActive?.(false);
-      this.onEnded?.();
-      this.stop();
-    }, (total + 0.3) * 1000 + (music ? 1500 : 0));
+    // Everything follows the context clock, so suspending the context
+    // pauses progress tracking along with the sound.
+    this.totalEnd = cursor + 0.3 + (music ? 1.5 : 0);
+    this.ticker = window.setInterval(() => {
+      if (!this.ctx || this.ctx.state === 'suspended') return;
+      const t = this.ctx.currentTime;
+      const voice = this.schedule.some((seg) => t >= seg.start && t < seg.end);
+      if (voice !== this.lastVoiceState) {
+        this.lastVoiceState = voice;
+        this.onVoiceActive?.(voice);
+      }
+      if (t >= this.totalEnd) {
+        this.onVoiceActive?.(false);
+        this.onEnded?.();
+        this.stop();
+      }
+    }, 250);
 
     // The audio element that keeps everything alive with the screen off.
     const el = new Audio();
@@ -154,10 +163,26 @@ export class MeditationEngine {
     return !!this.ctx;
   }
 
+  get paused(): boolean {
+    return this.ctx?.state === 'suspended';
+  }
+
+  async pause(): Promise<void> {
+    await this.ctx?.suspend();
+    this.element?.pause();
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  }
+
+  async resume(): Promise<void> {
+    await this.ctx?.resume();
+    await this.element?.play().catch(() => {});
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+  }
+
   stop(): void {
-    window.clearTimeout(this.endTimer);
-    for (const t of this.duckTimers) window.clearTimeout(t);
-    this.duckTimers = [];
+    window.clearInterval(this.ticker);
+    this.schedule = [];
+    this.lastVoiceState = false;
     for (const n of this.voiceNodes) {
       try {
         n.stop();

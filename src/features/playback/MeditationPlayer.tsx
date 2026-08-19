@@ -43,7 +43,9 @@ export function MeditationPlayer({
   const { board, mutate } = useBoardContext();
   const engineRef = useRef<MeditationEngine | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [pausedUi, setPausedUi] = useState(false);
   const [loading, setLoading] = useState(false);
+  const autoStarted = useRef(false);
 
   const library = useMemo(() => board?.meditationLibrary ?? [], [board?.meditationLibrary]);
   // The deck freezes its screen list at session start; the live board
@@ -57,6 +59,15 @@ export function MeditationPlayer({
       engineRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (autoStarted.current || !board) return;
+    if ((livePage.meditation?.slots?.length ?? 0) > 0) {
+      autoStarted.current = true;
+      void start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board]);
 
   if (!board) return null;
 
@@ -82,7 +93,10 @@ export function MeditationPlayer({
     engineRef.current?.stop();
     engineRef.current = engine;
     engine.onVoiceActive = (a) => onVoiceActive?.(a);
-    engine.onEnded = () => setPlaying(false);
+    engine.onEnded = () => {
+      setPlaying(false);
+      setPausedUi(false);
+    };
     const segments: EngineSegment[] = [];
     for (const slot of config.slots) {
       if (slot.kind === 'silence') segments.push({ kind: 'silence', seconds: slot.minutes * 60 });
@@ -117,13 +131,35 @@ export function MeditationPlayer({
   const stop = () => {
     engineRef.current?.stop();
     setPlaying(false);
+    setPausedUi(false);
+  };
+
+  const togglePause = async () => {
+    const engine = engineRef.current;
+    if (!engine?.playing) return;
+    if (engine.paused) {
+      await engine.resume();
+      setPausedUi(false);
+    } else {
+      await engine.pause();
+      setPausedUi(true);
+    }
+  };
+
+  const restart = async () => {
+    stop();
+    await start();
   };
 
   const rows: (MeditationSlot | null)[] = [...config.slots];
   if (rows.length < MAX_SLOTS) rows.push(null);
 
   return (
-    <div className="pointer-events-auto mx-auto w-full max-w-sm rounded-lg bg-black/55 p-3 backdrop-blur-sm">
+    <div
+      className="pointer-events-auto mx-auto w-full max-w-sm rounded-lg bg-black/55 p-3 backdrop-blur-sm"
+      onPointerDown={(ev) => ev.stopPropagation()}
+      onPointerUp={(ev) => ev.stopPropagation()}
+    >
       {library.length === 0 && (
         <p className="font-body text-xs text-white/70">{m.noLibrary}</p>
       )}
@@ -225,16 +261,40 @@ export function MeditationPlayer({
             </div>
           )}
 
-          <button
-            type="button"
-            disabled={loading || !config.slots.length}
-            onClick={() => (playing ? stop() : void start())}
-            className={`mt-2.5 w-full rounded py-2 font-body text-sm font-medium ${
-              playing ? 'bg-white/20 text-white' : 'bg-primary text-background'
-            } disabled:opacity-50`}
-          >
-            {loading ? m.loading : playing ? m.stop : m.play}
-          </button>
+          {!playing ? (
+            <button
+              type="button"
+              disabled={loading || !config.slots.length}
+              onClick={() => void start()}
+              className="mt-2.5 w-full rounded bg-primary py-2 font-body text-sm font-medium text-background disabled:opacity-50"
+            >
+              {loading ? m.loading : m.play}
+            </button>
+          ) : (
+            <div className="mt-2.5 flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => void togglePause()}
+                className="grow rounded bg-primary py-2 font-body text-sm font-medium text-background"
+              >
+                {pausedUi ? m.resume : m.pause}
+              </button>
+              <button
+                type="button"
+                onClick={() => void restart()}
+                className="rounded border border-white/25 px-4 py-2 font-body text-sm text-white hover:bg-white/10"
+              >
+                {m.restart}
+              </button>
+              <button
+                type="button"
+                onClick={stop}
+                className="rounded border border-white/25 px-3 py-2 font-body text-sm text-white/70 hover:bg-white/10"
+              >
+                {m.stop}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -9,7 +9,6 @@ import type { PageTypeDef } from '../types';
 export const aspProcess: PageTypeDef = {
   type: 'asp-process',
   textFlow: true,
-  pageAudio: true,
   defaultTemplateId: 'prose',
   templates: [
     {

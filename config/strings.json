@@ -386,6 +386,9 @@
     "roleClosing": "Closing",
     "roleMusic": "Music",
     "roleFull": "Full",
-    "descriptionPlaceholder": "Short description, e.g. 10 min breath focus"
+    "descriptionPlaceholder": "Short description, e.g. 10 min breath focus",
+    "pause": "Pause",
+    "resume": "Resume",
+    "restart": "Restart"
   }
 }

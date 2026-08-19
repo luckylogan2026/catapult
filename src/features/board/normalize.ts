@@ -44,7 +44,16 @@ export function ensureTemplateBlocks(board: Board): Board {
         : page.type === 'chapters' && page.title === 'Chapters'
           ? names['chapters'].name
           : page.title;
-    if (!missing.length && templateId === page.templateId && title === page.title) return page;
+    // The meditation builder replaced the legacy page audio there.
+    const narrationAssetId = page.type === 'asp-process' ? undefined : page.narrationAssetId;
+    if (narrationAssetId !== page.narrationAssetId) changed = true;
+    if (
+      !missing.length &&
+      templateId === page.templateId &&
+      title === page.title &&
+      narrationAssetId === page.narrationAssetId
+    )
+      return page;
     changed = true;
     const maxZ = Math.max(0, ...page.blocks.map((b) => b.z));
     const added: Block[] = missing.map((s, i) => ({
@@ -56,7 +65,7 @@ export function ensureTemplateBlocks(board: Board): Board {
       z: maxZ + i + 1,
       style: s.textStyle,
     }));
-    return { ...page, templateId, title, blocks: [...page.blocks, ...added] };
+    return { ...page, templateId, title, narrationAssetId, blocks: [...page.blocks, ...added] };
   });
   return changed ? { ...board, pages } : board;
 }
