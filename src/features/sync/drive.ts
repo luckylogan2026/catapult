@@ -255,6 +255,51 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
   }
 }
 
+const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
+
+async function syncJournalSheet(board: Board, folderId: string, files: RemoteFile[]): Promise<void> {
+  try {
+    const completions = board.streak?.completions ?? [];
+    if (!completions.length) return;
+    let sheet = files.find((f) => f.name === 'Journal');
+    let sheetId = sheet?.id;
+    if (!sheetId) {
+      const created = await api('/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Journal',
+          mimeType: 'application/vnd.google-apps.spreadsheet',
+          parents: [folderId],
+        }),
+      });
+      sheetId = (await created.json()).id as string;
+    }
+    if (!sheetId) return;
+    const rows = [...completions]
+      .sort((a, b) => a.completedAt.localeCompare(b.completedAt))
+      .map((c) => [
+        c.date,
+        new Date(c.completedAt).toLocaleTimeString(),
+        c.playlistId,
+        c.priorities ?? '',
+        c.note ?? '',
+      ]);
+    const values = [['Date', 'Time', 'Playlist', 'Priorities', 'Journal'], ...rows];
+    await fetch(`${SHEETS}/${sheetId}/values/A1:clear`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    await fetch(`${SHEETS}/${sheetId}/values/A1?valueInputOption=RAW`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values }),
+    });
+  } catch {
+    // The journal sheet is a convenience mirror; sync itself stays whole.
+  }
+}
+
 async function pushBoard(
   board: Board,
   folderId: string,
@@ -278,11 +323,12 @@ async function pushBoard(
     new Blob([JSON.stringify(board)], { type: 'application/json' }),
     boardFileId,
   );
+  await syncJournalSheet(board, folderId, files);
   // Garbage collection: remote assets no board references, untouched for
   // thirty days, go away.
   const grace = Date.now() - 30 * 24 * 3600 * 1000;
   for (const f of files) {
-    if (f.name === 'board.json' || wanted.has(f.name)) continue;
+    if (f.name === 'board.json' || f.name === 'Journal' || wanted.has(f.name)) continue;
     if (f.modifiedTime && Date.parse(f.modifiedTime) < grace) {
       await api(`/files/${f.id}`, { method: 'DELETE' }).catch(() => {});
     }

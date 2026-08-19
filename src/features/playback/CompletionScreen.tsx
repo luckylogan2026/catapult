@@ -40,7 +40,7 @@ export function CompletionScreen({
   const { board, mutate } = useBoardContext();
   const [note, setNote] = useState('');
   const [priorities, setPriorities] = useState('');
-  const [listening, setListening] = useState(false);
+  const [listening, setListening] = useState<'note' | 'priorities' | null>(null);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const canDictate = typeof window !== 'undefined' && !!getRecognizer();
 
@@ -52,11 +52,11 @@ export function CompletionScreen({
   const morning = done.morning;
   const evening = done.evening;
 
-  const toggleDictation = () => {
+  const toggleDictation = (target: 'note' | 'priorities') => {
     if (listening) {
       recRef.current?.stop();
-      setListening(false);
-      return;
+      setListening(null);
+      if (listening === target) return;
     }
     const rec = getRecognizer();
     if (!rec) return;
@@ -64,18 +64,19 @@ export function CompletionScreen({
     rec.lang = navigator.language || 'en-US';
     rec.interimResults = false;
     rec.continuous = true;
+    const setter = target === 'note' ? setNote : setPriorities;
     rec.onresult = (ev) => {
       const parts: string[] = [];
       for (let i = 0; i < ev.results.length; i++) {
         const r = ev.results[i];
         if (r.isFinal) parts.push(r[0].transcript);
       }
-      if (parts.length) setNote((n) => (n ? n + ' ' : '') + parts.join(' ').trim());
+      if (parts.length) setter((n) => (n ? n + ' ' : '') + parts.join(' ').trim());
     };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(null);
+    rec.onerror = () => setListening(null);
     rec.start();
-    setListening(true);
+    setListening(target);
   };
 
   const finish = () => {
@@ -95,13 +96,28 @@ export function CompletionScreen({
         {c.streakLabel} · {c.morningShort} {morning} · {c.eveningShort} {evening}
       </p>
 
-      <textarea
-        value={priorities}
-        onChange={(ev) => setPriorities(ev.target.value)}
-        placeholder={c.prioritiesPlaceholder}
-        rows={5}
-        className="w-full max-w-2xl resize-y rounded border border-text-muted/30 bg-surface/60 p-3 text-left font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
-      />
+      <div className="relative w-full max-w-2xl">
+        <textarea
+          value={priorities}
+          onChange={(ev) => setPriorities(ev.target.value)}
+          placeholder={c.prioritiesPlaceholder}
+          rows={5}
+          className="w-full resize-y rounded border border-text-muted/30 bg-surface/60 p-3 pb-10 text-left font-body text-sm text-text outline-none placeholder:text-text-muted/50 focus:border-primary"
+        />
+        {canDictate && (
+          <button
+            type="button"
+            onClick={() => toggleDictation('priorities')}
+            className={`absolute bottom-3 right-2 rounded-full border px-3 py-1 font-body text-[11px] ${
+              listening === 'priorities'
+                ? 'border-red-400 bg-red-500/20 text-red-300'
+                : 'border-text-muted/30 text-text-muted hover:text-text'
+            }`}
+          >
+            {listening === 'priorities' ? c.dictateStop : '🎤 ' + c.dictateStart}
+          </button>
+        )}
+      </div>
 
       <div className="relative w-full max-w-2xl">
         <textarea
@@ -114,14 +130,14 @@ export function CompletionScreen({
         {canDictate && (
           <button
             type="button"
-            onClick={toggleDictation}
+            onClick={() => toggleDictation('note')}
             className={`absolute bottom-3 right-2 rounded-full border px-3 py-1 font-body text-[11px] ${
-              listening
+              listening === 'note'
                 ? 'border-red-400 bg-red-500/20 text-red-300'
                 : 'border-text-muted/30 text-text-muted hover:text-text'
             }`}
           >
-            {listening ? c.dictateStop : '🎤 ' + c.dictateStart}
+            {listening === 'note' ? c.dictateStop : '🎤 ' + c.dictateStart}
           </button>
         )}
       </div>
