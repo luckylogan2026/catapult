@@ -92,7 +92,14 @@ export function useScreenAudio(
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !active) return;
+    if (!audio) return;
+    if (!active) {
+      // The session content is over or paused out: nothing pending may
+      // start late on top of the ending screen.
+      ttsRef.current?.cancel();
+      audio.pause();
+      return;
+    }
     const { src, tap } = sourceForScreen(screen);
     const owner = screen ? ownerOf(screen) : null;
 

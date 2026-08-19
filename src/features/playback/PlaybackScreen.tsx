@@ -98,7 +98,7 @@ export function PlaybackScreen({
     board!,
     playlist,
     current,
-    !!screens,
+    !!screens && !completed,
     onForeground,
   );
 
