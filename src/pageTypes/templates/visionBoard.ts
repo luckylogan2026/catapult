@@ -29,8 +29,8 @@ const halfH = (H - GAP) / 2;
 export const visionBoardTemplates: TemplateDef[] = [
   arrangement('cells-1', 'cellsOne', [{ x: MARGIN, y: TOP, w: CONTENT_W, h: H, rot: 0 }]),
   arrangement('cells-2', 'cellsTwo', [
-    { x: MARGIN, y: TOP, w: halfW, h: H, rot: 0 },
-    { x: MARGIN + halfW + GAP, y: TOP, w: halfW, h: H, rot: 0 },
+    { x: MARGIN, y: TOP, w: CONTENT_W, h: halfH, rot: 0 },
+    { x: MARGIN, y: TOP + halfH + GAP, w: CONTENT_W, h: halfH, rot: 0 },
   ]),
   arrangement('cells-3', 'cellsThree', [
     { x: MARGIN, y: TOP, w: CONTENT_W, h: halfH, rot: 0 },
