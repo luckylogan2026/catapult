@@ -255,7 +255,6 @@
       "description": "An audio meditation with optional guiding text.",
       "slots": {
         "title": "Meditation",
-        "subtitle": "Keywords",
         "body": "Optional guiding text. Insert [pause] wherever a silence belongs.",
         "background": "Background image or video"
       }

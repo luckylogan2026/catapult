@@ -1,5 +1,5 @@
 import { CANVAS_H, CANVAS_W } from '../../domain/types';
-import { bodySlot, subtitleSlot, titleSlot } from '../geometry';
+import { bodySlot, titleSlot } from '../geometry';
 import type { PageTypeDef } from '../types';
 
 // The Meditation page: a full-bleed background image or video, the
@@ -9,6 +9,7 @@ import type { PageTypeDef } from '../types';
 export const aspProcess: PageTypeDef = {
   type: 'asp-process',
   textFlow: true,
+  meditationBuilder: true,
   defaultTemplateId: 'prose',
   templates: [
     {
@@ -22,7 +23,6 @@ export const aspProcess: PageTypeDef = {
           rect: { x: 0, y: 0, w: CANVAS_W, h: CANVAS_H, rot: 0 },
         },
         titleSlot(),
-        subtitleSlot(),
         bodySlot(),
       ],
     },

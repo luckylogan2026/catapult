@@ -249,7 +249,7 @@ function EditorInner() {
                   </select>
                 )}
                 {def.pageAudio && <PageAudioControl page={page} />}
-                {def.pageAudio && (
+                {def.meditationBuilder && (
                   <button
                     type="button"
                     className="rounded border border-text-muted/30 px-2 py-1 font-body text-xs text-text-muted hover:text-text"

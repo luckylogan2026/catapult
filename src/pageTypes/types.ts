@@ -56,6 +56,8 @@ export type PageTypeDef = {
   cellExpansion?: boolean;
   /** This page carries its own audio (meditation or narration). */
   pageAudio?: boolean;
+  /** This page hosts the meditation builder and its library. */
+  meditationBuilder?: boolean;
   /** A custom authoring surface replaces the canvas for this type. */
   authoring?: 'affirmation-list' | 'master-affirmation-list';
 };
