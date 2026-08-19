@@ -16,7 +16,11 @@ const ROLE_LABELS: Record<string, string> = {
   music: m.roleMusic,
 };
 
-function groupedOptions(library: { id: string; name: string; role?: string }[]) {
+function optionLabel(r: { name: string; description?: string }): string {
+  return r.description?.trim() ? `${r.name} · ${r.description.trim()}` : r.name;
+}
+
+function groupedOptions(library: { id: string; name: string; role?: string; description?: string }[]) {
   const roleOf = (r: { role?: string }) => (r.role && r.role !== 'other' ? r.role : 'full');
   return ROLE_ORDER.map((role) => ({
     role,
@@ -142,7 +146,7 @@ export function MeditationPlayer({
                     <optgroup key={g.role} label={g.label}>
                       {g.items.map((r) => (
                         <option key={r.id} value={r.id}>
-                          {r.name}
+                          {optionLabel(r)}
                         </option>
                       ))}
                     </optgroup>
@@ -187,7 +191,7 @@ export function MeditationPlayer({
                 <optgroup key={g.role} label={g.label}>
                   {g.items.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.name}
+                      {optionLabel(r)}
                     </option>
                   ))}
                 </optgroup>

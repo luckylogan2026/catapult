@@ -385,6 +385,7 @@
     "roleBody": "Body",
     "roleClosing": "Closing",
     "roleMusic": "Music",
-    "roleFull": "Full"
+    "roleFull": "Full",
+    "descriptionPlaceholder": "Short description, e.g. 10 min breath focus"
   }
 }

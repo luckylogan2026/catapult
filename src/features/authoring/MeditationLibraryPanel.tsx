@@ -101,6 +101,9 @@ export function MeditationLibraryPanel({ onClose }: { onClose: () => void }) {
               rec={rec}
               onRename={(name) => update((list) => list.map((r) => (r.id === rec.id ? { ...r, name } : r)))}
               onRole={(role) => update((list) => list.map((r) => (r.id === rec.id ? { ...r, role } : r)))}
+              onDescribe={(description) =>
+                update((list) => list.map((r) => (r.id === rec.id ? { ...r, description } : r)))
+              }
               onRemove={() => update((list) => list.filter((r) => r.id !== rec.id))}
             />
           ))}
@@ -114,22 +117,32 @@ function LibraryRow({
   rec,
   onRename,
   onRole,
+  onDescribe,
   onRemove,
 }: {
   rec: LibraryRecording;
   onRename: (name: string) => void;
   onRole: (role: Role) => void;
+  onDescribe: (description: string) => void;
   onRemove: () => void;
 }) {
   const { url } = useAssetUrl(rec.assetId, 'full');
   return (
     <div className="flex items-center gap-2 rounded border border-text-muted/20 bg-surface/60 p-2">
-      <input
-        value={rec.name}
-        placeholder={m.libraryNamePlaceholder}
-        onChange={(ev) => onRename(ev.target.value)}
-        className="min-w-0 grow rounded border border-transparent bg-transparent px-1 font-body text-sm text-text outline-none focus:border-text-muted/30"
-      />
+      <div className="min-w-0 grow">
+        <input
+          value={rec.name}
+          placeholder={m.libraryNamePlaceholder}
+          onChange={(ev) => onRename(ev.target.value)}
+          className="w-full rounded border border-transparent bg-transparent px-1 font-body text-sm text-text outline-none focus:border-text-muted/30"
+        />
+        <input
+          value={rec.description ?? ''}
+          placeholder={m.descriptionPlaceholder}
+          onChange={(ev) => onDescribe(ev.target.value)}
+          className="w-full rounded border border-transparent bg-transparent px-1 font-body text-xs text-text-muted outline-none placeholder:text-text-muted/40 focus:border-text-muted/30"
+        />
+      </div>
       <select
         value={rec.role === 'other' || !rec.role ? 'full' : rec.role}
         onChange={(ev) => onRole(ev.target.value as Role)}
