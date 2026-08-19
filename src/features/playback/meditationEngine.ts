@@ -9,12 +9,12 @@ import { db } from '../../db/db';
 // level, with the boost capped so hiss is not amplified.
 
 export type EngineSegment =
-  | { kind: 'audio'; assetId: string }
-  | { kind: 'silence'; seconds: number };
+  | { kind: 'audio'; assetId: string; label?: string }
+  | { kind: 'silence'; seconds: number; label?: string };
 
 type LoadedSegment =
-  | { kind: 'audio'; buffer: AudioBuffer; gain: number }
-  | { kind: 'silence'; seconds: number };
+  | { kind: 'audio'; buffer: AudioBuffer; gain: number; label?: string }
+  | { kind: 'silence'; seconds: number; label?: string };
 
 const TARGET_RMS = 0.08;
 const MAX_BOOST = 4; // +12 dB
@@ -43,6 +43,9 @@ export class MeditationEngine {
   private voiceNodes: AudioBufferSourceNode[] = [];
   private ticker: number | undefined;
   private schedule: { start: number; end: number }[] = [];
+  private timeline: { start: number; end: number; label?: string }[] = [];
+  private startAtTime = 0;
+  private contentEnd = 0;
   private totalEnd = 0;
   private lastVoiceState = false;
 
@@ -72,10 +75,10 @@ export class MeditationEngine {
     const loaded: LoadedSegment[] = [];
     for (const seg of segments) {
       if (seg.kind === 'silence') {
-        loaded.push({ kind: 'silence', seconds: seg.seconds });
+        loaded.push({ kind: 'silence', seconds: seg.seconds, label: seg.label });
       } else {
         const buffer = await decode(seg.assetId);
-        if (buffer) loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer) });
+        if (buffer) loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label });
       }
     }
     if (this.ctx !== ctx) return; // stopped while decoding
@@ -123,9 +126,11 @@ export class MeditationEngine {
 
     // Schedule the voice chain, sample-accurate, with duck automation.
     const startAt = ctx.currentTime + 0.25;
+    this.startAtTime = startAt;
     let cursor = startAt;
     for (const seg of loaded) {
       if (seg.kind === 'silence') {
+        this.timeline.push({ start: cursor, end: cursor + seg.seconds, label: seg.label });
         cursor += seg.seconds;
         continue;
       }
@@ -144,11 +149,13 @@ export class MeditationEngine {
         g.setTargetAtTime(music.volume, segEnd, 0.4);
       }
       this.schedule.push({ start: segStart, end: segEnd });
+      this.timeline.push({ start: segStart, end: segEnd, label: seg.label });
       cursor = segEnd;
     }
 
     // Everything follows the context clock, so suspending the context
     // pauses progress tracking along with the sound.
+    this.contentEnd = cursor;
     this.totalEnd = cursor + 0.3 + (music ? 1.5 : 0);
     this.ticker = window.setInterval(() => {
       if (!this.ctx || this.ctx.state === 'suspended') return;
@@ -170,6 +177,15 @@ export class MeditationEngine {
     if (this.musicGain && this.ctx) {
       this.musicGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.05);
     }
+  }
+
+  progress(): { elapsed: number; total: number; label?: string } | null {
+    if (!this.ctx || !this.contentEnd) return null;
+    const t = this.ctx.currentTime;
+    const total = this.contentEnd - this.startAtTime;
+    const elapsed = Math.min(total, Math.max(0, t - this.startAtTime));
+    const seg = this.timeline.find((s) => t >= s.start && t < s.end);
+    return { elapsed, total, label: seg?.label };
   }
 
   get playing(): boolean {
@@ -195,6 +211,8 @@ export class MeditationEngine {
   stop(): void {
     window.clearInterval(this.ticker);
     this.schedule = [];
+    this.timeline = [];
+    this.contentEnd = 0;
     this.lastVoiceState = false;
     for (const n of this.voiceNodes) {
       try {

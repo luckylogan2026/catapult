@@ -7,6 +7,13 @@ import { MeditationEngine, type EngineSegment } from './meditationEngine';
 const m = strings.meditation;
 const MAX_SLOTS = 5;
 
+function fmtTime(s: number): string {
+  const total = Math.round(s);
+  const mm = Math.floor(total / 60);
+  const ss = total % 60;
+  return `${mm}:${String(ss).padStart(2, '0')}`;
+}
+
 const ROLE_ORDER = ['opening', 'body', 'closing', 'full', 'music'] as const;
 const ROLE_LABELS: Record<string, string> = {
   opening: m.roleOpening,
@@ -44,6 +51,7 @@ export function MeditationPlayer({
   const engineRef = useRef<MeditationEngine | null>(null);
   const [playing, setPlaying] = useState(false);
   const [pausedUi, setPausedUi] = useState(false);
+  const [progress, setProgress] = useState<{ elapsed: number; total: number; label?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const autoStarted = useRef(false);
 
@@ -59,6 +67,17 @@ export function MeditationPlayer({
       engineRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!playing) {
+      setProgress(null);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setProgress(engineRef.current?.progress() ?? null);
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, [playing]);
 
   useEffect(() => {
     if (autoStarted.current || !board) return;
@@ -99,10 +118,11 @@ export function MeditationPlayer({
     };
     const segments: EngineSegment[] = [];
     for (const slot of config.slots) {
-      if (slot.kind === 'silence') segments.push({ kind: 'silence', seconds: slot.minutes * 60 });
-      else {
+      if (slot.kind === 'silence') {
+        segments.push({ kind: 'silence', seconds: slot.minutes * 60, label: m.slotSilence });
+      } else {
         const rec = library.find((r) => r.id === slot.libraryId);
-        if (rec) segments.push({ kind: 'audio', assetId: rec.assetId });
+        if (rec) segments.push({ kind: 'audio', assetId: rec.assetId, label: rec.description?.trim() || rec.name });
       }
     }
     if (!segments.length) return;
@@ -261,6 +281,21 @@ export function MeditationPlayer({
             </div>
           )}
 
+          {playing && progress && (
+            <div className="mt-2.5">
+              <div className="h-1 w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-1 rounded-full bg-primary"
+                  style={{ width: `${Math.min(100, (progress.elapsed / Math.max(1, progress.total)) * 100)}%` }}
+                />
+              </div>
+              <div className="mt-1 flex items-center justify-between font-body text-[11px] text-white/70">
+                <span>{fmtTime(progress.elapsed)}</span>
+                <span className="truncate px-2">{progress.label ?? ''}</span>
+                <span>-{fmtTime(Math.max(0, progress.total - progress.elapsed))}</span>
+              </div>
+            </div>
+          )}
           {!playing ? (
             <button
               type="button"
