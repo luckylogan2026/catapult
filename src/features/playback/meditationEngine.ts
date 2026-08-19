@@ -80,6 +80,30 @@ export class MeditationEngine {
     }
     if (this.ctx !== ctx) return; // stopped while decoding
 
+    // The output element starts FIRST and must be confirmed flowing
+    // before anything is scheduled: a live stream has no rewind, so
+    // sound produced before the element runs is lost forever. This was
+    // audible as the first seconds going missing.
+    const el = new Audio();
+    el.srcObject = dest.stream;
+    this.element = el;
+    await el.play().catch(() => {});
+    await new Promise<void>((resolve) => {
+      const done = () => resolve();
+      if (!el.paused && el.currentTime > 0) done();
+      else {
+        el.addEventListener('playing', done, { once: true });
+        window.setTimeout(done, 700);
+      }
+    });
+    await new Promise((r) => window.setTimeout(r, 150));
+    if (this.ctx !== ctx) return; // stopped during startup
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata(meta);
+      navigator.mediaSession.setActionHandler('play', () => void el.play());
+      navigator.mediaSession.setActionHandler('pause', () => el.pause());
+    }
+
     // Background music: its own loop and gain, live-adjustable.
     if (music) {
       const buffer = await decode(music.assetId);
@@ -98,7 +122,7 @@ export class MeditationEngine {
     }
 
     // Schedule the voice chain, sample-accurate, with duck automation.
-    const startAt = ctx.currentTime + 0.15;
+    const startAt = ctx.currentTime + 0.25;
     let cursor = startAt;
     for (const seg of loaded) {
       if (seg.kind === 'silence') {
@@ -140,17 +164,6 @@ export class MeditationEngine {
         this.stop();
       }
     }, 250);
-
-    // The audio element that keeps everything alive with the screen off.
-    const el = new Audio();
-    el.srcObject = dest.stream;
-    this.element = el;
-    await el.play().catch(() => {});
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata(meta);
-      navigator.mediaSession.setActionHandler('play', () => void el.play());
-      navigator.mediaSession.setActionHandler('pause', () => el.pause());
-    }
   }
 
   setMusicVolume(volume: number): void {
