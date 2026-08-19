@@ -259,6 +259,11 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     if (!files.some((f) => f.name === 'Journal') && (board.streak?.completions?.length ?? 0) > 0) {
       await syncJournalSheet(board, folderId, files);
     }
+    const repaired = await repairAssets(board, folderId, files);
+    if (repaired.uploaded) return { kind: 'pushed', assetsUploaded: repaired.uploaded };
+    if (repaired.downloaded) {
+      return { kind: 'pulled', board, assetsDownloaded: repaired.downloaded };
+    }
     return { kind: 'idle' };
   } catch (err) {
     return { kind: 'error', message: err instanceof Error ? err.message : 'sync failed' };
@@ -308,6 +313,33 @@ async function syncJournalSheet(board: Board, folderId: string, files: RemoteFil
   } catch {
     // The journal sheet is a convenience mirror; sync itself stays whole.
   }
+}
+
+// Uploads referenced assets Drive lacks and downloads ones this device
+// lacks, without touching the board itself.
+async function repairAssets(
+  board: Board,
+  folderId: string,
+  files: RemoteFile[],
+): Promise<{ uploaded: number; downloaded: number }> {
+  const wanted = referencedAssetIds(board);
+  const remoteNames = new Map(files.map((f) => [f.name, f]));
+  let uploaded = 0;
+  let downloaded = 0;
+  for (const id of wanted) {
+    const local = await db.assets.get(id);
+    const remote = remoteNames.get(id);
+    if (local && !remote) {
+      await uploadFile(folderId, id, local.blob);
+      uploaded++;
+    } else if (!local && remote) {
+      const blob = await downloadFile(remote.id);
+      const { storeBundleAsset } = await import('../exports/visionBundle');
+      await storeBundleAsset(id, blob);
+      downloaded++;
+    }
+  }
+  return { uploaded, downloaded };
 }
 
 async function pushBoard(

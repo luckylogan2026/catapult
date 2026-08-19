@@ -128,41 +128,45 @@ function LibraryRow({
 }) {
   const { url } = useAssetUrl(rec.assetId, 'full');
   return (
-    <div className="flex items-center gap-2 rounded border border-text-muted/20 bg-surface/60 p-2">
-      <div className="min-w-0 grow">
+    <div className="rounded border border-text-muted/20 bg-surface/60 p-2">
+      <div className="flex items-center gap-2">
         <input
           value={rec.name}
           placeholder={m.libraryNamePlaceholder}
           onChange={(ev) => onRename(ev.target.value)}
-          className="w-full rounded border border-transparent bg-transparent px-1 font-body text-sm text-text outline-none focus:border-text-muted/30"
+          className="min-w-0 grow rounded border border-transparent bg-transparent px-1 font-body text-sm text-text outline-none focus:border-text-muted/30"
         />
-        <input
-          value={rec.description ?? ''}
-          placeholder={m.descriptionPlaceholder}
-          onChange={(ev) => onDescribe(ev.target.value)}
-          className="w-full rounded border border-transparent bg-transparent px-1 font-body text-xs text-text-muted outline-none placeholder:text-text-muted/40 focus:border-text-muted/30"
-        />
+        <select
+          value={rec.role === 'other' || !rec.role ? 'full' : rec.role}
+          onChange={(ev) => onRole(ev.target.value as Role)}
+          className="shrink-0 rounded border border-text-muted/30 bg-background px-1 py-1 font-body text-xs text-text"
+        >
+          {ROLES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          title={strings.common.delete}
+          className="shrink-0 rounded px-2 py-1 font-body text-sm text-text-muted hover:text-text"
+          onClick={onRemove}
+        >
+          ✕
+        </button>
       </div>
-      <select
-        value={rec.role === 'other' || !rec.role ? 'full' : rec.role}
-        onChange={(ev) => onRole(ev.target.value as Role)}
-        className="shrink-0 rounded border border-text-muted/30 bg-background px-1 py-1 font-body text-xs text-text"
-      >
-        {ROLES.map((r) => (
-          <option key={r.value} value={r.value}>
-            {r.label}
-          </option>
-        ))}
-      </select>
-      {url && <audio controls src={url} className="h-8 w-40 shrink-0" />}
-      <button
-        type="button"
-        title={strings.common.delete}
-        className="shrink-0 rounded px-2 py-1 font-body text-sm text-text-muted hover:text-text"
-        onClick={onRemove}
-      >
-        ✕
-      </button>
+      <input
+        value={rec.description ?? ''}
+        placeholder={m.descriptionPlaceholder}
+        onChange={(ev) => onDescribe(ev.target.value)}
+        className="mt-0.5 w-full rounded border border-transparent bg-transparent px-1 font-body text-xs text-text-muted outline-none placeholder:text-text-muted/40 focus:border-text-muted/30"
+      />
+      {url ? (
+        <audio controls src={url} className="mt-1.5 h-8 w-full" />
+      ) : (
+        <p className="mt-1.5 font-body text-[11px] text-text-muted/70">{m.audioMissing}</p>
+      )}
     </div>
   );
 }

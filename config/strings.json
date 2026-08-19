@@ -388,6 +388,7 @@
     "descriptionPlaceholder": "Short description, e.g. 10 min breath focus",
     "pause": "Pause",
     "resume": "Resume",
-    "restart": "Restart"
+    "restart": "Restart",
+    "audioMissing": "Audio not on this device yet. Sync now fetches it."
   }
 }
