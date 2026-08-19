@@ -132,7 +132,7 @@ export class MeditationEngine {
       el.remove();
       this.element = null;
     }
-    await new Promise((r) => window.setTimeout(r, 100));
+    await new Promise((r) => window.setTimeout(r, 450));
     if (this.ctx !== ctx) return;
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata(meta);
@@ -185,7 +185,7 @@ export class MeditationEngine {
     this.musicGain = null;
     this.timeline = [];
 
-    const startAt = ctx.currentTime + 0.2;
+    const startAt = ctx.currentTime + 0.5;
     this.startAtTime = startAt;
     this.offsetBase = Math.min(Math.max(0, offset), this.contentTotal);
 

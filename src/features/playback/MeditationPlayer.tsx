@@ -425,7 +425,16 @@ function SlotSheet({
         className="max-h-[70vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[#141414] p-3 pb-6"
         onClick={(ev) => ev.stopPropagation()}
       >
-        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/20" />
+        <div className="relative mb-2">
+          <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute -top-1 right-0 rounded-full px-2 py-0.5 font-body text-sm text-white/60 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
         <Row value="empty" label={isMusic ? m.musicNone : m.slotEmpty} muted />
         {!isMusic && <Row value="silence" label={m.slotSilence} />}
         {ordered.map((g) => (
