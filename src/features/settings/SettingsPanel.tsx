@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { strings } from '../../config';
+import { strings, trackerItems } from '../../config';
 import { db } from '../../db/db';
 import { storageEstimate } from '../../db/storage';
 import { useBoardContext } from '../board/BoardContext';
@@ -10,6 +10,12 @@ import { importFiles } from '../../assetPipeline/importAssets';
 import { SyncSection, type useSyncEngine } from '../sync/SyncSection';
 
 const s = strings.settings;
+const tk = strings.tracker;
+
+// Every tracker item once, for the anchors editor.
+const allTrackerItems = [...trackerItems.morning, ...trackerItems.evening].filter(
+  (it, i, arr) => arr.findIndex((o) => o.key === it.key) === i,
+);
 
 function fmtBytes(n: number): string {
   if (n > 1024 * 1024 * 1024) return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
@@ -598,6 +604,47 @@ export function SettingsPanel({
           />
           {s.archiveOriginals}
         </label>
+
+        <label className="mt-3 flex items-start gap-2 font-body text-sm text-text">
+          <input
+            type="checkbox"
+            checked={!!board.settings.postShiftEnabled}
+            onChange={(ev) =>
+              mutate((b) => ({
+                ...b,
+                settings: { ...b.settings, postShiftEnabled: ev.target.checked },
+              }))
+            }
+            className="mt-0.5 h-4 w-4 accent-[var(--tc-primary)]"
+          />
+          {tk.postShiftSetting}
+        </label>
+
+        <details className="mt-4 rounded border border-text-muted/20 p-3">
+          <summary className="cursor-pointer font-body text-sm font-medium text-text">
+            {tk.anchorsSettings}
+          </summary>
+          <p className="mt-1 font-body text-xs text-text-muted">{tk.anchorsBody}</p>
+          {allTrackerItems.map((it) => (
+            <label key={it.key} className="mt-2 block font-body text-xs text-text-muted">
+              {it.label}
+              <input
+                type="text"
+                value={board.settings.anchors?.[it.key] ?? ''}
+                onChange={(ev) =>
+                  mutate((b) => ({
+                    ...b,
+                    settings: {
+                      ...b.settings,
+                      anchors: { ...(b.settings.anchors ?? {}), [it.key]: ev.target.value },
+                    },
+                  }))
+                }
+                className="mt-1 w-full rounded border border-text-muted/30 bg-surface/60 px-2 py-1.5 font-body text-sm text-text outline-none focus:border-primary"
+              />
+            </label>
+          ))}
+        </details>
 
         <div className="mt-6 border-t border-text-muted/20 pt-4">
           <p className="font-body text-xs text-text-muted">{s.startOverWarning}</p>

@@ -8,6 +8,7 @@ import { buildScreens, drawAffirmations, screenKey, type Screen } from './screen
 import { ScreenView } from './ScreenView';
 import { useScreenAudio } from './useScreenAudio';
 import { CompletionScreen } from './CompletionScreen';
+import { PostShiftScreen, needsPostShift } from '../tracker/PostShiftScreen';
 import { useSessionAudio } from './useSessionAudio';
 
 const p = strings.playback;
@@ -39,6 +40,7 @@ export function PlaybackScreen({
   const fadeTimer = useRef<number | undefined>(undefined);
   const [chrome, setChrome] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [postShiftOpen, setPostShiftOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,7 @@ export function PlaybackScreen({
     if (completed) {
       stop();
       fadeOut();
+      setPostShiftOpen(board ? needsPostShift(board, playlistId) : false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completed]);
@@ -315,7 +318,10 @@ export function PlaybackScreen({
         );
       })}
 
-      {completed && (
+      {completed && postShiftOpen && (
+        <PostShiftScreen playlistId={playlistId} onDone={() => setPostShiftOpen(false)} />
+      )}
+      {completed && !postShiftOpen && (
         <CompletionScreen
           playlistId={playlistId}
           onBack={() => setCompleted(false)}
