@@ -35,6 +35,17 @@ function y(v: number): number {
   return PAD_T + ((10 - v) / 9) * (H - PAD_T - PAD_B);
 }
 
+// A point with no drawable neighbor never shows up in a path, so the
+// first rated days would render an empty chart without these.
+function isolatedPoints(series: (number | null)[]): { i: number; v: number }[] {
+  return series
+    .map((v, i) => ({ i, v }))
+    .filter(
+      (p): p is { i: number; v: number } =>
+        p.v !== null && series[p.i - 1] == null && series[p.i + 1] == null,
+    );
+}
+
 function linePath(series: (number | null)[]): string {
   let path = '';
   let pen = false;
@@ -172,6 +183,12 @@ export function ProgressView({ onClose }: { onClose: () => void }) {
                   )}
                 <path d={linePath(data.adherence)} fill="none" stroke="var(--tc-primary)" strokeWidth="2" />
                 <path d={linePath(data.baseline)} fill="none" stroke="var(--tc-secondary)" strokeWidth="2" />
+                {isolatedPoints(data.adherence).map((p) => (
+                  <circle key={`ia${p.i}`} cx={x(p.i, count)} cy={y(p.v)} r="2.5" fill="var(--tc-primary)" />
+                ))}
+                {isolatedPoints(data.baseline).map((p) => (
+                  <circle key={`ib${p.i}`} cx={x(p.i, count)} cy={y(p.v)} r="2.5" fill="var(--tc-secondary)" />
+                ))}
                 <text x={PAD_L} y={H - 6} fontSize="10" fill="var(--tc-text-muted)">
                   {data.dates[0]}
                 </text>
