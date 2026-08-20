@@ -503,7 +503,11 @@ function EditorInner() {
         (shouldOfferAnchors(board) ? (
           <AnchorsScreen onDone={() => setRatingTick((n) => n + 1)} />
         ) : !hasRatingFor(board, playing) ? (
-          <RatingsScreen playlistId={playing} onDone={() => setRatingTick((n) => n + 1)} />
+          <RatingsScreen
+            playlistId={playing}
+            onDone={() => setRatingTick((n) => n + 1)}
+            onCancel={() => setPlaying(null)}
+          />
         ) : (
           <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />
         ))}

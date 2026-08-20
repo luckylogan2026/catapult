@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { strings, trackerItems, type TrackerItem } from '../../config';
 import type { Board, PlaylistId } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
@@ -33,9 +33,11 @@ function valueAt(clientX: number, el: HTMLElement, min: number): number {
 export function RatingsScreen({
   playlistId,
   onDone,
+  onCancel,
 }: {
   playlistId: PlaylistId;
   onDone: () => void;
+  onCancel: () => void;
 }) {
   const { board, mutate } = useBoardContext();
   const items = useMemo(() => itemsFor(playlistId), [playlistId]);
@@ -43,6 +45,17 @@ export function RatingsScreen({
   const [anchorFor, setAnchorFor] = useState<string | null>(null);
   const longPress = useRef<number | undefined>(undefined);
   const dragging = useRef<string | null>(null);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+
+  // Escape backs out to the editor without writing anything: unlike
+  // Skip, the gate stays armed for the next launch.
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
 
   if (!board) return null;
   const anchors = board.settings.anchors ?? {};
@@ -67,7 +80,23 @@ export function RatingsScreen({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-background"
+      // A left swipe anywhere off the bars is the mobile way out. Bars
+      // capture their own pointer for value drags, so they are excluded.
+      onPointerDown={(ev) => {
+        if ((ev.target as HTMLElement).closest('[role=slider]')) return;
+        swipe.current = { x: ev.clientX, y: ev.clientY };
+      }}
+      onPointerUp={(ev) => {
+        const start = swipe.current;
+        swipe.current = null;
+        if (!start) return;
+        const dx = ev.clientX - start.x;
+        const dy = ev.clientY - start.y;
+        if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) onCancel();
+      }}
+    >
       <div className="flex shrink-0 items-center justify-between border-b border-text-muted/15 px-4 py-1.5">
         <span className="font-body text-xs tracking-[0.2em] text-text-muted">
           {tk.positionOf.replace('{n}', String(answered)).replace('{total}', String(items.length))}
