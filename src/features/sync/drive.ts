@@ -1,7 +1,9 @@
 import { db } from '../../db/db';
 import { kvGet, kvSet } from '../../db/kv';
-import type { Board } from '../../domain/types';
+import type { Board, PlaylistId, SessionCompletion } from '../../domain/types';
 import { referencedAssetIds } from '../exports/visionBundle';
+import { frozenPendings } from '../playback/streak';
+import { trackerItems } from '../../config';
 import syncConfig from '../../../config/sync.json';
 import brand from '../../../config/brand.json';
 
@@ -292,7 +294,10 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
       return { kind: 'pushed', assetsUploaded: uploaded };
     }
 
-    if (!files.some((f) => f.name === 'Journal') && (board.streak?.completions?.length ?? 0) > 0) {
+    if (
+      !files.some((f) => f.name === 'Journal') &&
+      ((board.streak?.completions?.length ?? 0) > 0 || frozenPendings(board).length > 0)
+    ) {
       await syncJournalSheet(board, folderId, files);
     }
     const repaired = await repairAssets(board, folderId, files);
@@ -308,10 +313,37 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
 
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 
+const morningKeys = trackerItems.morning.map((it) => it.key);
+const eveningKeys = trackerItems.evening.map((it) => it.key);
+const outcomeKeys = trackerItems.evening.filter((it) => it.type === 'outcome').map((it) => it.key);
+const inputKeys = trackerItems.evening.filter((it) => it.type === 'input').map((it) => it.key);
+
+function mean2(values: number[]): number | '' {
+  if (!values.length) return '';
+  return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100;
+}
+
+/** Overall streak as it stood on a given date: consecutive completion
+ * days ending there. Completions only; frozen pendings never count. */
+function streakAsOf(completions: SessionCompletion[], date: string): number {
+  const days = new Set(completions.map((c) => c.date));
+  let cursor = date;
+  let streak = 0;
+  while (days.has(cursor)) {
+    streak++;
+    const [y, m, d] = cursor.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() - 1);
+    cursor = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
+  return streak;
+}
+
 async function syncJournalSheet(board: Board, folderId: string, files: RemoteFile[]): Promise<void> {
   try {
     const completions = board.streak?.completions ?? [];
-    if (!completions.length) return;
+    const frozen = frozenPendings(board);
+    if (!completions.length && !frozen.length) return;
     let sheet = files.find((f) => f.name === 'Journal');
     let sheetId = sheet?.id;
     if (!sheetId) {
@@ -327,17 +359,79 @@ async function syncJournalSheet(board: Board, folderId: string, files: RemoteFil
       sheetId = (await created.json()).id as string;
     }
     if (!sheetId) return;
-    const rows = [...completions]
-      .sort((a, b) => a.completedAt.localeCompare(b.completedAt))
-      .map((c) => [
-        c.date,
-        new Date(c.completedAt).toLocaleTimeString(),
-        c.playlistId,
-        c.priorities ?? '',
-        c.note ?? '',
-      ]);
-    const values = [['Date', 'Time', 'Playlist', 'Priorities', 'Journal'], ...rows];
-    await fetch(`${SHEETS}/${sheetId}/values/A1:clear`, {
+
+    // One row per session: completions, plus frozen pendings whose
+    // session never happened. Dropping the frozen rows would make the
+    // dataset lie, because abandoned mornings are not random mornings.
+    type Row = {
+      date: string;
+      stamp: string;
+      playlistId: PlaylistId;
+      priorities: string;
+      note: string;
+      scores?: Record<string, number>;
+      postShift?: number;
+      completed: boolean;
+    };
+    const entries: Row[] = [
+      ...completions.map((c) => ({
+        date: c.date,
+        stamp: c.completedAt,
+        playlistId: c.playlistId,
+        priorities: c.priorities ?? '',
+        note: c.note ?? '',
+        scores: c.scores,
+        postShift: c.postShift,
+        completed: true,
+      })),
+      ...frozen.map((p) => ({
+        date: p.date,
+        stamp: p.ratedAt,
+        playlistId: p.playlistId,
+        priorities: '',
+        note: '',
+        scores: p.scores,
+        postShift: p.postShift,
+        completed: false,
+      })),
+    ].sort((a, b) => a.date.localeCompare(b.date) || a.stamp.localeCompare(b.stamp));
+
+    const rows = entries.map((r) => {
+      const sc = r.scores ?? {};
+      const has = (k: string) => typeof sc[k] === 'number';
+      const cell = (k: string) => (has(k) ? sc[k] : '');
+      const isMorning = r.playlistId === 'morning';
+      // Inputs scored 0 mean "did not happen" and are excluded from the
+      // mean; weekend-skipped items are simply absent from scores.
+      const inputVals = inputKeys.filter((k) => has(k) && sc[k] > 0).map((k) => sc[k]);
+      return [
+        r.date,
+        new Date(r.stamp).toLocaleTimeString(),
+        r.playlistId,
+        r.priorities,
+        r.note,
+        streakAsOf(completions, r.date),
+        ...morningKeys.map((k) => (isMorning ? cell(k) : '')),
+        isMorning ? mean2(morningKeys.filter(has).map((k) => sc[k])) : '',
+        ...eveningKeys.map((k) => (isMorning ? '' : cell(k))),
+        isMorning ? '' : mean2(outcomeKeys.filter(has).map((k) => sc[k])),
+        isMorning ? '' : mean2(inputVals),
+        r.postShift ?? '',
+        r.completed ? 'TRUE' : 'FALSE',
+      ];
+    });
+    const values = [
+      [
+        'Date', 'Time', 'Playlist', 'Priorities', 'Journal', 'Streak',
+        ...morningKeys, 'morning_composite',
+        ...eveningKeys, 'outcome_composite', 'input_composite',
+        'post_shift', 'practice_completed',
+      ],
+      ...rows,
+    ];
+    // Clear the whole grid, not one cell: a deleted entry must vanish
+    // from the sheet on the next sync.
+    await fetch(`${SHEETS}/${sheetId}/values/A1:ZZ:clear`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
