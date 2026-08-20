@@ -193,6 +193,12 @@ export function PlaybackScreen({
   const width = () => containerRef.current?.clientWidth ?? window.innerWidth;
 
   const onPointerDown = (ev: React.PointerEvent) => {
+    // The completion and post-shift screens own their pointers: the
+    // deck's capture would retarget pointerup to the container and
+    // real clicks on their buttons would never fire. (Programmatic
+    // .click() in tests bypasses the pointer pipeline, which is why
+    // this went unseen until a human clicked Save and finish.)
+    if (completed) return;
     if (ev.pointerType === 'mouse' && ev.button !== 0) return;
     if (ev.clientX < EDGE_DEAD_ZONE) return;
     drag.current = {
@@ -207,6 +213,7 @@ export function PlaybackScreen({
   };
 
   const onPointerMove = (ev: React.PointerEvent) => {
+    if (completed) return;
     const d = drag.current;
     if (!d?.active) return;
     const dx = ev.clientX - d.startX;
@@ -227,6 +234,10 @@ export function PlaybackScreen({
   };
 
   const onPointerUp = (ev: React.PointerEvent) => {
+    if (completed) {
+      drag.current = null;
+      return;
+    }
     const d = drag.current;
     drag.current = null;
     if (!d?.horizontal) {
