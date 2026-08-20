@@ -49,8 +49,6 @@ export class MeditationEngine {
   private loaded: LoadedSegment[] = [];
   private music: { volume: number; duck: boolean } | null = null;
   private musicElement: HTMLAudioElement | null = null;
-  private musicNode: MediaElementAudioSourceNode | null = null;
-  private musicGain: GainNode | null = null;
   private voiceNodes: AudioBufferSourceNode[] = [];
   private ticker: number | undefined;
   private timeline: { start: number; end: number; voice: boolean; label?: string }[] = [];
@@ -106,16 +104,16 @@ export class MeditationEngine {
       const asset = await db.assets.get(music.assetId);
       if (this.ctx !== ctx) return;
       if (asset) {
+        // The music is its own media element, screen-off capable in its
+        // own right, with ducking driven on its volume directly. No
+        // graph capture involved, so no capture quirks can defeat it.
         const musicEl = new Audio();
         musicEl.src = assetObjectUrl(asset.id, asset.blob);
         musicEl.loop = true;
+        musicEl.volume = music.volume;
         musicEl.style.display = 'none';
         document.body.appendChild(musicEl);
         this.musicElement = musicEl;
-        this.musicNode = ctx.createMediaElementSource(musicEl);
-        this.musicGain = ctx.createGain();
-        this.musicGain.gain.value = music.volume;
-        this.musicNode.connect(this.musicGain).connect(this.master);
         this.music = { volume: music.volume, duck: music.duck };
       }
     }
@@ -168,6 +166,12 @@ export class MeditationEngine {
         this.lastVoiceState = voice;
         this.onVoiceActive?.(voice);
       }
+      if (this.music && this.musicElement) {
+        const target = this.music.duck && voice ? this.music.volume * 0.3 : this.music.volume;
+        const current = this.musicElement.volume;
+        const next = current + (target - current) * 0.35;
+        this.musicElement.volume = Math.min(1, Math.max(0, Math.abs(next - target) < 0.01 ? target : next));
+      }
       const endAt =
         this.startAtTime + (this.contentTotal - this.offsetBase) + 0.3 + (this.music ? 1.5 : 0);
       if (t >= endAt) {
@@ -200,15 +204,12 @@ export class MeditationEngine {
     this.startAtTime = startAt;
     this.offsetBase = Math.min(Math.max(0, offset), this.contentTotal);
 
-    if (this.music && this.musicElement && this.musicGain) {
+    if (this.music && this.musicElement) {
       const dur = this.musicElement.duration;
       if (Number.isFinite(dur) && dur > 0) {
         this.musicElement.currentTime = this.offsetBase % dur;
       }
       void this.musicElement.play().catch(() => {});
-      // Reset any old duck automation before the fresh pass writes new.
-      this.musicGain.gain.cancelScheduledValues(ctx.currentTime);
-      this.musicGain.gain.setValueAtTime(this.music.volume, ctx.currentTime);
     }
 
     let contentPos = 0;
@@ -235,11 +236,6 @@ export class MeditationEngine {
         this.voiceNodes.push(src);
         const segStart = cursor;
         const segEnd = cursor + remaining;
-        if (this.music?.duck && this.musicGain) {
-          const g = this.musicGain.gain;
-          g.setTargetAtTime(this.music.volume * 0.3, Math.max(ctx.currentTime, segStart - 0.3), 0.15);
-          g.setTargetAtTime(this.music.volume, segEnd, 0.4);
-        }
         this.timeline.push({ start: segStart, end: segEnd, voice: true, label: seg.label });
         cursor = segEnd;
       }
@@ -267,34 +263,16 @@ export class MeditationEngine {
 
   setMusicVolume(volume: number): void {
     if (this.music) this.music.volume = volume;
-    this.reapplyMusicAutomation();
+    // The ticker ramps toward the new target while ducking runs; write
+    // directly when idle, paused, or not ducking so the slider always
+    // answers immediately.
+    if (this.musicElement && (!this.ctx || this.ctx.state === 'suspended' || !this.music?.duck)) {
+      this.musicElement.volume = Math.min(1, Math.max(0, volume));
+    }
   }
 
   setMusicDuck(duck: boolean): void {
     if (this.music) this.music.duck = duck;
-    this.reapplyMusicAutomation();
-  }
-
-  // Rewrites the music gain automation for the rest of the timeline,
-  // honoring the current volume and duck flag, applying immediately to
-  // a session already underway.
-  private reapplyMusicAutomation(): void {
-    const ctx = this.ctx;
-    const g = this.musicGain?.gain;
-    const music = this.music;
-    if (!ctx || !g || !music) return;
-    const now = ctx.currentTime;
-    g.cancelScheduledValues(now);
-    const inVoice = this.timeline.some((s) => s.voice && now >= s.start && now < s.end);
-    const target = music.duck && inVoice ? music.volume * 0.3 : music.volume;
-    g.setTargetAtTime(target, now, 0.1);
-    if (music.duck) {
-      for (const seg of this.timeline) {
-        if (!seg.voice || seg.end <= now) continue;
-        if (seg.start - 0.3 > now) g.setTargetAtTime(music.volume * 0.3, seg.start - 0.3, 0.15);
-        g.setTargetAtTime(music.volume, seg.end, 0.4);
-      }
-    }
   }
 
   get playing(): boolean {
@@ -334,9 +312,6 @@ export class MeditationEngine {
     this.musicElement?.pause();
     this.musicElement?.remove();
     this.musicElement = null;
-    this.musicNode?.disconnect();
-    this.musicNode = null;
-    this.musicGain = null;
     this.music = null;
     this.loaded = [];
     this.contentTotal = 0;
