@@ -107,6 +107,15 @@ export function frozenPendings(board: Board): PendingRating[] {
   );
 }
 
+/** Sessions that carry a rating, completed or frozen. The anchors
+ * offer keys off this count. */
+export function ratedSessionCount(board: Board): number {
+  return (
+    board.streak.completions.filter((c) => !!c.ratedAt).length +
+    frozenPendings(board).filter((p) => !!p.scores).length
+  );
+}
+
 /** Records today's completion for a playlist, one entry per day, the
  * note replacing any earlier one. */
 export function recordCompletion(

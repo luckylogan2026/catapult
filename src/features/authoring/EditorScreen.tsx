@@ -29,6 +29,7 @@ import { MeditationLibraryPanel } from './MeditationLibraryPanel';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
 import { pageIsLight, themeIsLightNow } from '../../theme/pageAppearance';
 import { RatingsScreen } from '../tracker/RatingsScreen';
+import { AnchorsScreen, shouldOfferAnchors } from '../tracker/AnchorsScreen';
 import { hasRatingFor } from '../playback/streak';
 import type { PlaylistId } from '../../domain/types';
 
@@ -494,7 +495,9 @@ function EditorInner() {
       <ConflictDialog engine={syncEngine} />
 
       {playing &&
-        (!hasRatingFor(board, playing) ? (
+        (shouldOfferAnchors(board) ? (
+          <AnchorsScreen onDone={() => setRatingTick((n) => n + 1)} />
+        ) : !hasRatingFor(board, playing) ? (
           <RatingsScreen playlistId={playing} onDone={() => setRatingTick((n) => n + 1)} />
         ) : (
           <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />
