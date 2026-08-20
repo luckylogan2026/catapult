@@ -84,15 +84,23 @@ export function RatingsScreen({
         </button>
       </div>
 
-      <div className="flex grow flex-col justify-evenly overflow-y-auto px-3 py-1">
+      {/* The inner column is capped by item count so a tall desktop
+          window centers a compact block instead of spreading rows
+          across the whole height; on a phone the cap exceeds the
+          viewport and the rows spread evenly to fill it exactly. */}
+      <div className="flex grow flex-col items-center justify-center overflow-y-auto px-3 py-1">
+        <div
+          className="flex w-full max-w-md grow flex-col justify-evenly"
+          style={{ maxHeight: items.length * 62 }}
+        >
         {items.map((item) => {
           const values: number[] = [];
           for (let v = item.min; v <= 10; v++) values.push(v);
           const selected = scores[item.key];
           return (
-            <div key={item.key} className="mx-auto w-full max-w-md shrink-0 py-[1px]">
+            <div key={item.key} className="w-full shrink-0 py-[1px]">
               <p
-                className="font-body text-xs font-medium leading-tight text-text"
+                className="font-body text-sm font-medium leading-tight text-text md:text-base"
                 onPointerDown={() => {
                   longPress.current = window.setTimeout(() => setAnchorFor(item.key), 450);
                 }}
@@ -113,7 +121,7 @@ export function RatingsScreen({
                 aria-valuemax={10}
                 aria-valuenow={selected}
                 tabIndex={0}
-                className="mt-[2px] flex h-5 w-full cursor-pointer select-none overflow-hidden rounded border border-text-muted/25"
+                className="mt-[2px] flex h-5 w-full cursor-pointer select-none overflow-hidden rounded border border-text-muted/25 md:h-7"
                 style={{ touchAction: 'none' }}
                 onPointerDown={(ev) => {
                   dragging.current = item.key;
@@ -147,7 +155,7 @@ export function RatingsScreen({
                 {values.map((v) => (
                   <span
                     key={v}
-                    className={`pointer-events-none flex flex-1 items-center justify-center border-r border-text-muted/15 font-body text-[11px] leading-none last:border-r-0 ${
+                    className={`pointer-events-none flex flex-1 items-center justify-center border-r border-text-muted/15 font-body text-xs leading-none last:border-r-0 md:text-sm ${
                       selected === undefined
                         ? 'text-text-muted'
                         : v === selected
@@ -164,6 +172,7 @@ export function RatingsScreen({
             </div>
           );
         })}
+        </div>
       </div>
 
       <div className="shrink-0 border-t border-text-muted/15 px-4 py-2">
