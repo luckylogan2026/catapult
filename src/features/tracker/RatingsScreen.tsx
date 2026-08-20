@@ -6,10 +6,12 @@ import { localDate, mergePendingRatings } from '../playback/streak';
 
 const tk = strings.tracker;
 
-// The pre-practice rating screen. Every item on one page, one compact
-// radio row per item so the whole set fits with minimal scrolling.
-// Used twice a day for years: fast, thumb-only, boring on purpose. No
-// previous scores shown, no colors, no commentary.
+// The pre-practice rating screen. Every item on one screen, no
+// scrolling: each item is a label over a full-width tap bar of discrete
+// segments. The bar starts empty (no thumb, no default) so nothing
+// anchors the answer; tap or drag and release to set it. Used twice a
+// day for years: fast, thumb-only, boring on purpose. No previous
+// scores shown, no colors, no commentary.
 
 function isWeekend(): boolean {
   const d = new Date().getDay();
@@ -19,6 +21,13 @@ function isWeekend(): boolean {
 export function itemsFor(playlistId: PlaylistId): TrackerItem[] {
   const set = playlistId === 'morning' ? trackerItems.morning : trackerItems.evening;
   return set.filter((it) => !(it.weekdaysOnly && isWeekend()));
+}
+
+function valueAt(clientX: number, el: HTMLElement, min: number): number {
+  const rect = el.getBoundingClientRect();
+  const frac = Math.min(0.999, Math.max(0, (clientX - rect.left) / rect.width));
+  const count = 10 - min + 1;
+  return min + Math.floor(frac * count);
 }
 
 export function RatingsScreen({
@@ -33,7 +42,7 @@ export function RatingsScreen({
   const [scores, setScores] = useState<Record<string, number>>({});
   const [anchorFor, setAnchorFor] = useState<string | null>(null);
   const longPress = useRef<number | undefined>(undefined);
-  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const dragging = useRef<string | null>(null);
 
   if (!board) return null;
   const anchors = board.settings.anchors ?? {};
@@ -57,21 +66,9 @@ export function RatingsScreen({
     onDone();
   };
 
-  const pick = (item: TrackerItem, value: number) => {
-    const wasNew = scores[item.key] === undefined;
-    setScores((s) => ({ ...s, [item.key]: value }));
-    // First answer on a row nudges the page forward so the thumb never
-    // has to scroll; re-taps just change the value in place.
-    if (wasNew) {
-      const idx = items.findIndex((it) => it.key === item.key);
-      const next = items[idx + 1];
-      if (next) rowRefs.current[next.key]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="flex shrink-0 items-center justify-between border-b border-text-muted/15 px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between border-b border-text-muted/15 px-4 py-1.5">
         <span className="font-body text-xs tracking-[0.2em] text-text-muted">
           {tk.positionOf.replace('{n}', String(answered)).replace('{total}', String(items.length))}
         </span>
@@ -87,69 +84,89 @@ export function RatingsScreen({
         </button>
       </div>
 
-      <div className="grow overflow-y-auto px-3 pb-4 pt-1">
-        <div className="mx-auto flex max-w-md flex-col">
-          {items.map((item) => {
-            const values: number[] = [];
-            for (let v = item.min; v <= 10; v++) values.push(v);
-            const selected = scores[item.key];
-            return (
-              <div
-                key={item.key}
-                ref={(el) => {
-                  rowRefs.current[item.key] = el;
+      <div className="flex grow flex-col justify-evenly overflow-y-auto px-3 py-1">
+        {items.map((item) => {
+          const values: number[] = [];
+          for (let v = item.min; v <= 10; v++) values.push(v);
+          const selected = scores[item.key];
+          return (
+            <div key={item.key} className="mx-auto w-full max-w-md shrink-0 py-[1px]">
+              <p
+                className="font-body text-xs font-medium leading-tight text-text"
+                onPointerDown={() => {
+                  longPress.current = window.setTimeout(() => setAnchorFor(item.key), 450);
                 }}
-                className="scroll-mt-2 border-b border-text-muted/10 py-2 last:border-b-0"
+                onPointerUp={() => window.clearTimeout(longPress.current)}
+                onPointerLeave={() => window.clearTimeout(longPress.current)}
+                onMouseEnter={() => anchors[item.key] && setAnchorFor(item.key)}
+                onMouseLeave={() => setAnchorFor((k) => (k === item.key ? null : k))}
               >
-                <p
-                  className="font-body text-sm font-medium leading-snug text-text"
-                  onPointerDown={() => {
-                    longPress.current = window.setTimeout(() => setAnchorFor(item.key), 450);
-                  }}
-                  onPointerUp={() => window.clearTimeout(longPress.current)}
-                  onPointerLeave={() => window.clearTimeout(longPress.current)}
-                  onMouseEnter={() => anchors[item.key] && setAnchorFor(item.key)}
-                  onMouseLeave={() => setAnchorFor((k) => (k === item.key ? null : k))}
-                >
-                  {item.label}
-                </p>
+                {item.label}
                 {anchorFor === item.key && anchors[item.key] && (
-                  <p className="font-body text-xs text-text-muted">10: {anchors[item.key]}</p>
+                  <span className="ml-2 font-normal text-text-muted">10: {anchors[item.key]}</span>
                 )}
-                <div className="mt-0.5 flex" role="radiogroup" aria-label={item.label}>
-                  {values.map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected === v}
-                      onClick={() => pick(item, v)}
-                      className="flex flex-1 flex-col items-center gap-0.5 py-1"
-                    >
-                      <span
-                        className={`h-4 w-4 rounded-full border ${
-                          selected === v
-                            ? 'border-primary bg-primary'
-                            : 'border-text-muted/40'
-                        }`}
-                      />
-                      <span
-                        className={`font-body text-[10px] leading-none ${
-                          selected === v ? 'text-text' : 'text-text-muted'
-                        }`}
-                      >
-                        {v}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              </p>
+              <div
+                role="slider"
+                aria-label={item.label}
+                aria-valuemin={item.min}
+                aria-valuemax={10}
+                aria-valuenow={selected}
+                tabIndex={0}
+                className="mt-[2px] flex h-5 w-full cursor-pointer select-none overflow-hidden rounded border border-text-muted/25"
+                style={{ touchAction: 'none' }}
+                onPointerDown={(ev) => {
+                  dragging.current = item.key;
+                  try {
+                    ev.currentTarget.setPointerCapture(ev.pointerId);
+                  } catch {
+                    // Synthetic events carry no active pointer; taps still work.
+                  }
+                  const v = valueAt(ev.clientX, ev.currentTarget, item.min);
+                  setScores((s) => ({ ...s, [item.key]: v }));
+                }}
+                onPointerMove={(ev) => {
+                  if (dragging.current !== item.key) return;
+                  const v = valueAt(ev.clientX, ev.currentTarget, item.min);
+                  setScores((s) => ({ ...s, [item.key]: v }));
+                }}
+                onPointerUp={() => {
+                  dragging.current = null;
+                }}
+                onKeyDown={(ev) => {
+                  if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+                  ev.preventDefault();
+                  const delta = ev.key === 'ArrowRight' ? 1 : -1;
+                  setScores((s) => {
+                    const cur = s[item.key];
+                    const next = cur === undefined ? (delta > 0 ? item.min : 10) : Math.min(10, Math.max(item.min, cur + delta));
+                    return { ...s, [item.key]: next };
+                  });
+                }}
+              >
+                {values.map((v) => (
+                  <span
+                    key={v}
+                    className={`pointer-events-none flex flex-1 items-center justify-center border-r border-text-muted/15 font-body text-[11px] leading-none last:border-r-0 ${
+                      selected === undefined
+                        ? 'text-text-muted'
+                        : v === selected
+                          ? 'bg-primary font-semibold text-background'
+                          : v < selected
+                            ? 'bg-primary/20 text-text'
+                            : 'text-text-muted'
+                    }`}
+                  >
+                    {v}
+                  </span>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="shrink-0 border-t border-text-muted/15 px-4 py-2.5">
+      <div className="shrink-0 border-t border-text-muted/15 px-4 py-2">
         <button
           type="button"
           disabled={answered === 0}
