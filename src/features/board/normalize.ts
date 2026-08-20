@@ -19,9 +19,16 @@ export function ensureTemplateBlocks(board: Board): Board {
   if (board.schemaVersion < 2) {
     board = {
       ...board,
-      schemaVersion: SCHEMA_VERSION,
+      schemaVersion: 2,
       playlists: board.playlists.map((pl) => ({ ...pl, autoAdvance: false })),
     };
+    changed = true;
+  }
+  // Schema 3: session ratings. Completions without scores are already
+  // the valid representation of a skipped rating, so this is a version
+  // bump with no data transform.
+  if (board.schemaVersion < 3) {
+    board = { ...board, schemaVersion: SCHEMA_VERSION };
     changed = true;
   }
   const kept = board.pages.filter((p) => !RETIRED_TYPES.has(p.type));

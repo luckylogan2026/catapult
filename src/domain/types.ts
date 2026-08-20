@@ -247,6 +247,12 @@ export type Settings = {
   ttsRate: number;
   /** Passcode hook, disabled in v1 by decision. */
   passcodeEnabled: false;
+  /** One line per item key: what a 10 means, in the user's own words. */
+  anchors?: Record<string, string>;
+  /** How many times the anchor prompt has been offered, capped at two. */
+  anchorOffers?: number;
+  /** Ask the post-session item after the pages. Off by default. */
+  postShiftEnabled?: boolean;
 };
 
 export type SessionCompletion = {
@@ -258,6 +264,26 @@ export type SessionCompletion = {
   note?: string;
   /** The day's top priorities, from the completion screen. */
   priorities?: string;
+  /** Item key to score. Absent when the user skipped rating. */
+  scores?: Record<string, number>;
+  /** When the ratings screen was submitted, always before the pages. */
+  ratedAt?: string;
+  /** Optional post-session single item, contaminated by design and
+   * never mixed into any baseline composite. */
+  postShift?: number;
+};
+
+/** A rating taken before the pages, waiting for its session to finish.
+ * One whose date has passed is frozen, never deleted: an abandoned
+ * morning's reading is clean pre-practice data, and dropping it would
+ * bias the baseline upward on exactly the bad mornings. */
+export type PendingRating = {
+  date: string;
+  playlistId: PlaylistId;
+  ratedAt: string;
+  /** Absent when the user skipped rating. */
+  scores?: Record<string, number>;
+  postShift?: number;
 };
 
 export type StreakRecord = {
@@ -286,6 +312,7 @@ export type Board = {
   meditationLibrary?: LibraryRecording[];
   playlists: Playlist[];
   streak: StreakRecord;
+  pendingRatings?: PendingRating[];
 };
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
