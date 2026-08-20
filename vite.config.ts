@@ -8,8 +8,15 @@ import strings from './config/strings.json' with { type: 'json' };
 // The base path is configurable through VITE_BASE so one build recipe
 // works at a repo subpath (https://user.github.io/repo/) and at a custom
 // domain (base "/"). The deploy workflow sets it per target.
+// Build stamp shown in the editor header so a stale service-worker
+// cache is visible at a glance (MMDD.HHMM, build machine local time).
+const now = new Date();
+const pad = (n: number) => String(n).padStart(2, '0');
+const buildId = `${pad(now.getMonth() + 1)}${pad(now.getDate())}.${pad(now.getHours())}${pad(now.getMinutes())}`;
+
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
+  define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     react(),
     tailwindcss(),

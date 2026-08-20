@@ -125,6 +125,7 @@ function EditorInner() {
         <span className="font-body text-xs text-text-muted">
           {saveState === 'saving' ? strings.common.saving : saveState === 'saved' ? strings.common.saved : ''}
         </span>
+        <span className="font-body text-[10px] text-text-muted/60">{__BUILD_ID__}</span>
         {syncEngine.status && (
           <button
             type="button"
