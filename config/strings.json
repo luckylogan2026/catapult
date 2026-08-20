@@ -322,7 +322,17 @@
     "autoAdvanceLabel": "Advance automatically",
     "dwellLabel": "Seconds per page",
     "autoAdvanceHint": "Off waits for your swipe. On holds each page for its audio, then runs the timer.",
-    "themeTitle": "Theme"
+    "themeTitle": "Theme",
+    "customColors": "Custom colors",
+    "colorBackground": "Background",
+    "colorSurface": "Surface",
+    "colorPrimary": "Primary",
+    "colorSecondary": "Secondary",
+    "colorText": "Text",
+    "colorTextMuted": "Muted text",
+    "resetColors": "Reset to preset",
+    "fromImage": "From image",
+    "fromImageHint": "Pick a logo or brand image; the main colors become your palette."
   },
   "playback": {
     "preview": "Play",
@@ -341,7 +351,8 @@
     "dictateStart": "Speak instead",
     "dictateStop": "Stop listening",
     "finish": "Save and finish",
-    "prioritiesPlaceholder": "Top 3 priorities for today"
+    "prioritiesPlaceholder": "Top 3 priorities for today",
+    "back": "Back"
   },
   "sync": {
     "title": "Google Drive sync",

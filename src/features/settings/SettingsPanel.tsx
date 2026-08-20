@@ -3,8 +3,9 @@ import { strings } from '../../config';
 import { db } from '../../db/db';
 import { storageEstimate } from '../../db/storage';
 import { useBoardContext } from '../board/BoardContext';
-import { themePresets } from '../../theme/presets';
+import { getPreset, themePresets, type ThemeColors } from '../../theme/presets';
 import { applyBoardTheme } from '../../theme/applyTheme';
+import { brand } from '../../config';
 import { importFiles } from '../../assetPipeline/importAssets';
 import { SyncSection, type useSyncEngine } from '../sync/SyncSection';
 
@@ -142,6 +143,82 @@ export function SettingsPanel({
     }
   };
 
+  const colorRef = useRef<HTMLInputElement>(null);
+
+  const effectiveColors = (): ThemeColors => {
+    if (!board) return getPreset('sugarpine-forest').colors;
+    const preset = getPreset(board.theme.presetId);
+    const brandLayer = board.theme.presetId === brand.defaultThemePreset ? brand.palette : {};
+    return { ...preset.colors, ...brandLayer, ...board.theme.colors } as ThemeColors;
+  };
+
+  const setColor = (key: keyof ThemeColors, value: string) => {
+    if (!board) return;
+    const nextTheme = { ...board.theme, colors: { ...board.theme.colors, [key]: value } };
+    mutate((b) => ({ ...b, theme: nextTheme }));
+    applyBoardTheme(nextTheme);
+  };
+
+  const resetColors = () => {
+    if (!board) return;
+    const nextTheme = { ...board.theme, colors: undefined };
+    mutate((b) => ({ ...b, theme: nextTheme }));
+    applyBoardTheme(nextTheme);
+  };
+
+  // Brand colors from an uploaded image: dominant clusters become the
+  // palette suggestion, tweakable with the pickers afterwards.
+  const extractFromImage = async (file: File) => {
+    if (!board) return;
+    const bitmap = await createImageBitmap(file);
+    const size = 48;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(bitmap, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+    bitmap.close();
+    const buckets = new Map<string, { r: number; g: number; b: number; n: number }>();
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 128) continue;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const key = `${r >> 5}-${g >> 5}-${b >> 5}`;
+      const e = buckets.get(key) ?? { r: 0, g: 0, b: 0, n: 0 };
+      e.r += r; e.g += g; e.b += b; e.n += 1;
+      buckets.set(key, e);
+    }
+    const clusters = [...buckets.values()]
+      .map((e) => ({ r: e.r / e.n, g: e.g / e.n, b: e.b / e.n, n: e.n }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 8);
+    if (!clusters.length) return;
+    const hex = (c: { r: number; g: number; b: number }) =>
+      '#' + [c.r, c.g, c.b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+    const lum = (c: { r: number; g: number; b: number }) => 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+    const sat = (c: { r: number; g: number; b: number }) =>
+      Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b);
+    const bySat = [...clusters].sort((a, b) => sat(b) * b.n - sat(a) * a.n);
+    const primary = bySat[0];
+    const secondary = bySat.find((c) => c !== primary && Math.abs(lum(c) - lum(primary)) > 24) ?? bySat[1] ?? primary;
+    const darkest = [...clusters].sort((a, b) => lum(a) - lum(b))[0];
+    const nextTheme = {
+      ...board.theme,
+      colors: {
+        ...board.theme.colors,
+        primary: hex(primary),
+        secondary: hex(secondary),
+        background: hex(darkest),
+        surface: hex({ r: darkest.r * 1.25 + 10, g: darkest.g * 1.25 + 10, b: darkest.b * 1.25 + 10 }),
+      },
+    };
+    mutate((b) => ({ ...b, theme: nextTheme }));
+    applyBoardTheme(nextTheme);
+  };
+
   const startOver = async () => {
     if (!window.confirm(s.startOverConfirm)) return;
     await db.boards.clear();
@@ -195,6 +272,59 @@ export function SettingsPanel({
                 {preset.name}
               </button>
             ))}
+          </div>
+          <div className="mt-3 border-t border-text-muted/15 pt-3">
+            <p className="font-body text-xs font-medium text-text">{s.customColors}</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {(
+                [
+                  ['background', s.colorBackground],
+                  ['surface', s.colorSurface],
+                  ['primary', s.colorPrimary],
+                  ['secondary', s.colorSecondary],
+                  ['text', s.colorText],
+                  ['textMuted', s.colorTextMuted],
+                ] as [keyof ThemeColors, string][]
+              ).map(([key, label]) => (
+                <label key={key} className="flex flex-col items-start gap-1 font-body text-[10px] text-text-muted">
+                  {label}
+                  <input
+                    type="color"
+                    value={effectiveColors()[key]}
+                    onChange={(ev) => setColor(key, ev.target.value)}
+                    className="h-7 w-full cursor-pointer rounded border border-text-muted/30 bg-transparent p-0"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="rounded border border-text-muted/30 px-2.5 py-1 font-body text-xs text-text-muted hover:text-text"
+                onClick={() => colorRef.current?.click()}
+                title={s.fromImageHint}
+              >
+                {s.fromImage}
+              </button>
+              <button
+                type="button"
+                className="rounded border border-text-muted/30 px-2.5 py-1 font-body text-xs text-text-muted hover:text-text"
+                onClick={resetColors}
+              >
+                {s.resetColors}
+              </button>
+              <input
+                ref={colorRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(ev) => {
+                  const f = ev.target.files?.[0];
+                  ev.target.value = '';
+                  if (f) void extractFromImage(f);
+                }}
+              />
+            </div>
           </div>
         </div>
 

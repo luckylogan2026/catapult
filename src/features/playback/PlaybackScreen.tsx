@@ -109,6 +109,7 @@ export function PlaybackScreen({
         setCompleted(true);
         return;
       }
+      setCompleted(false);
       const clamped = Math.max(0, Math.min(count - 1, next));
       setIndex((prev) => {
         if (clamped !== prev && mode === 'fade') {
@@ -315,6 +316,7 @@ export function PlaybackScreen({
       {completed && (
         <CompletionScreen
           playlistId={playlistId}
+          onBack={() => setCompleted(false)}
           onClose={() => {
             stop();
             onExit();

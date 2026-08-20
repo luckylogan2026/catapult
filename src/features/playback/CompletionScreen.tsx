@@ -32,9 +32,11 @@ function getRecognizer(): SpeechRecognitionLike | null {
 
 export function CompletionScreen({
   playlistId,
+  onBack,
   onClose,
 }: {
   playlistId: PlaylistId;
+  onBack?: () => void;
   onClose: () => void;
 }) {
   const { board, mutate } = useBoardContext();
@@ -90,6 +92,16 @@ export function CompletionScreen({
 
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 overflow-y-auto bg-background px-6 py-8 text-center">
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          onPointerDown={(ev) => ev.stopPropagation()}
+          className="absolute left-3 top-3 rounded px-2 py-1 font-body text-sm text-text-muted hover:text-text"
+        >
+          ← {c.back}
+        </button>
+      )}
       <p className="font-body text-sm uppercase tracking-[0.3em] text-text-muted">{c.title}</p>
       <p className="font-heading text-6xl font-semibold text-primary">{overall}</p>
       <p className="font-body text-sm text-text-muted">

@@ -282,7 +282,7 @@ function EditorInner() {
                     {e.affirmationRoll}
                   </label>
                 )}
-                {def.textFlow && def.authoring === undefined && (
+                {(def.textFlow || page.type === 'free-canvas') && def.authoring === undefined && (
                   <button
                     type="button"
                     title={e.lightPage}
