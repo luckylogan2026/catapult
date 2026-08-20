@@ -438,6 +438,7 @@
       "i_am_session": "the morning session landed",
       "i_pm_session": "the evening session landed"
     },
-    "save": "Save"
+    "save": "Save",
+    "progressError": "Progress could not render. Please report this:"
   }
 }

@@ -73,14 +73,18 @@ export function rollingSeries(
   });
 }
 
-/** Chart date range: first rated day through today, clamped to a year. */
+/** Chart date range: first rated day through today, clamped to a year.
+ * The iteration cap is defense in depth: a malformed date key must
+ * degrade the chart, never spin the main thread. */
 export function chartDates(days: Map<string, DayRatings>): string[] {
   if (!days.size) return [];
   const today = localDate();
   let first = [...days.keys()].sort()[0];
-  if (first < addDays(today, -364)) first = addDays(today, -364);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(first) || first < addDays(today, -364)) {
+    first = addDays(today, -364);
+  }
   const dates: string[] = [];
-  for (let d = first; d <= today; d = addDays(d, 1)) dates.push(d);
+  for (let d = first; d <= today && dates.length <= 366; d = addDays(d, 1)) dates.push(d);
   return dates;
 }
 

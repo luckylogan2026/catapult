@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Component, useMemo, useState, type ReactNode } from 'react';
 import { strings, trackerItems } from '../../config';
 import { useBoardContext } from '../board/BoardContext';
 import { ratedSessionCount } from '../playback/streak';
@@ -71,7 +71,8 @@ function windowMean(
   valueOf: (day: DayRatings) => number | null,
 ): number | null {
   const vals: number[] = [];
-  for (let d = from; d <= to; d = addDays(d, 1)) {
+  let steps = 0;
+  for (let d = from; d <= to && steps < 60; d = addDays(d, 1), steps++) {
     const day = days.get(d);
     if (!day) continue;
     const v = valueOf(day);
@@ -80,7 +81,47 @@ function windowMean(
   return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
 }
 
+// A crash in this view must never take the whole app down with it: the
+// boundary shows the error where a phone user can read and report it.
+class ProgressErrorBoundary extends Component<
+  { onClose: () => void; children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-background p-4">
+          <button
+            type="button"
+            onClick={this.props.onClose}
+            className="mb-3 rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text"
+          >
+            {strings.common.close}
+          </button>
+          <p className="font-body text-sm text-text">{tk.progressError}</p>
+          <pre className="mt-2 whitespace-pre-wrap break-all font-mono text-xs text-text-muted">
+            {String(this.state.error?.stack ?? this.state.error)}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function ProgressView({ onClose }: { onClose: () => void }) {
+  return (
+    <ProgressErrorBoundary onClose={onClose}>
+      <ProgressViewInner onClose={onClose} />
+    </ProgressErrorBoundary>
+  );
+}
+
+function ProgressViewInner({ onClose }: { onClose: () => void }) {
   const { board } = useBoardContext();
   const [showRaw, setShowRaw] = useState(false);
 
