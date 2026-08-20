@@ -267,8 +267,33 @@ export class MeditationEngine {
 
   setMusicVolume(volume: number): void {
     if (this.music) this.music.volume = volume;
-    if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.05);
+    this.reapplyMusicAutomation();
+  }
+
+  setMusicDuck(duck: boolean): void {
+    if (this.music) this.music.duck = duck;
+    this.reapplyMusicAutomation();
+  }
+
+  // Rewrites the music gain automation for the rest of the timeline,
+  // honoring the current volume and duck flag, applying immediately to
+  // a session already underway.
+  private reapplyMusicAutomation(): void {
+    const ctx = this.ctx;
+    const g = this.musicGain?.gain;
+    const music = this.music;
+    if (!ctx || !g || !music) return;
+    const now = ctx.currentTime;
+    g.cancelScheduledValues(now);
+    const inVoice = this.timeline.some((s) => s.voice && now >= s.start && now < s.end);
+    const target = music.duck && inVoice ? music.volume * 0.3 : music.volume;
+    g.setTargetAtTime(target, now, 0.1);
+    if (music.duck) {
+      for (const seg of this.timeline) {
+        if (!seg.voice || seg.end <= now) continue;
+        if (seg.start - 0.3 > now) g.setTargetAtTime(music.volume * 0.3, seg.start - 0.3, 0.15);
+        g.setTargetAtTime(music.volume, seg.end, 0.4);
+      }
     }
   }
 

@@ -102,10 +102,14 @@ export function MeditationPlayer({
     );
 
   const setSlot = (index: number, value: string) => {
-    const slots = [...config.slots];
+    const slots = config.slots.filter(Boolean);
+    const at = Math.min(index, slots.length);
     if (value === 'empty') slots.splice(index, 1);
-    else if (value === 'silence') slots[index] = { kind: 'silence', minutes: 2 };
-    else slots[index] = { kind: 'recording', libraryId: value };
+    else if (value === 'silence') slots[at] = { kind: 'silence', minutes: 2 };
+    else slots[at] = { kind: 'recording', libraryId: value };
+    // A changed arrangement stops the running session; Play starts the
+    // new one, so old and new chains can never sound together.
+    if (engineRef.current?.playing) stop();
     save({ ...config, slots: slots.slice(0, MAX_SLOTS) });
   };
 
@@ -269,7 +273,10 @@ export function MeditationPlayer({
                 <input
                   type="checkbox"
                   checked={config.musicDuck ?? false}
-                  onChange={(ev) => save({ ...config, musicDuck: ev.target.checked })}
+                  onChange={(ev) => {
+                    engineRef.current?.setMusicDuck(ev.target.checked);
+                    save({ ...config, musicDuck: ev.target.checked });
+                  }}
                   className="h-3 w-3 accent-[var(--tc-primary)]"
                 />
                 {m.musicDuckLabel}
@@ -384,6 +391,7 @@ export function MeditationPlayer({
               }
               onPick={(value) => {
                 if (picker === 'music') {
+                  if (engineRef.current?.playing) stop();
                   save({ ...config, musicLibraryId: value === 'empty' ? undefined : value });
                 } else {
                   setSlot(picker as number, value);
