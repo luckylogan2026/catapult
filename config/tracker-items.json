@@ -1,0 +1,32 @@
+{
+  "morning": [
+    { "key": "m_rested", "label": "I woke up rested", "min": 1 },
+    { "key": "m_energy", "label": "My energy is high", "min": 1 },
+    { "key": "m_calm", "label": "I feel calm", "min": 1 },
+    { "key": "m_excited", "label": "I feel excited about today", "min": 1 },
+    { "key": "m_free", "label": "I feel free", "min": 1 },
+    { "key": "m_loved", "label": "I feel loved", "min": 1 },
+    { "key": "m_grateful", "label": "I feel grateful to be alive", "min": 1 },
+    { "key": "m_body", "label": "I feel strong and healthy", "min": 1 },
+    { "key": "m_spirit", "label": "I feel spiritually connected", "min": 1 },
+    { "key": "m_self", "label": "I feel like myself", "min": 1 }
+  ],
+  "evening": [
+    { "key": "e_good", "label": "I felt good today", "min": 1, "type": "outcome" },
+    { "key": "e_energy", "label": "My energy stayed high today", "min": 1, "type": "outcome" },
+    { "key": "e_calm", "label": "My mind was calm today", "min": 1, "type": "outcome" },
+    { "key": "e_free", "label": "I felt free today", "min": 1, "type": "outcome" },
+    { "key": "e_close", "label": "I felt close to my family today", "min": 1, "type": "outcome" },
+    { "key": "e_proud", "label": "I am proud of how I showed up", "min": 1, "type": "outcome" },
+    { "key": "e_grateful", "label": "I felt grateful today", "min": 1, "type": "outcome" },
+    { "key": "e_abundant", "label": "I felt abundant today", "min": 1, "type": "outcome" },
+    { "key": "e_joy", "label": "I smiled and laughed today", "min": 1, "type": "outcome" },
+    { "key": "e_repeat", "label": "Today was a day worth repeating", "min": 1, "type": "outcome" },
+    { "key": "i_am_session", "label": "This morning's session landed", "min": 0, "type": "input" },
+    { "key": "i_pm_session", "label": "Last night's session landed", "min": 0, "type": "input" },
+    { "key": "i_train", "label": "I trained today", "min": 0, "type": "input" },
+    { "key": "i_eat", "label": "I ate clean today", "min": 0, "type": "input" },
+    { "key": "i_goal", "label": "I moved my number one goal forward", "min": 0, "type": "input", "weekdaysOnly": false },
+    { "key": "i_word", "label": "I honored my commitments today", "min": 0, "type": "input" }
+  ]
+}

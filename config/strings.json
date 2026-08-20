@@ -402,5 +402,39 @@
     "resume": "Resume",
     "restart": "Restart",
     "audioMissing": "Audio not on this device yet. Sync now fetches it."
+  },
+  "tracker": {
+    "positionOf": "{n} of {total}",
+    "skip": "Skip for now",
+    "back": "Back",
+    "zeroLabel": "Did not happen",
+    "postShiftItem": "How do I feel right now",
+    "postShiftTitle": "One more",
+    "anchorsTitle": "What does a 10 mean to you",
+    "anchorsBody": "One line per item, in your own words. These keep the scale honest over time. You can edit them in settings.",
+    "anchorsSave": "Save",
+    "anchorsSkip": "Not now",
+    "anchorsSettings": "Anchors",
+    "postShiftSetting": "Ask how you feel after each session",
+    "progress": "Progress",
+    "progressTitle": "Progress",
+    "headlineTitle": "Practice and morning baseline, 28 day averages",
+    "headlineAdherence": "Sessions landing",
+    "headlineBaseline": "Morning baseline",
+    "rawToggle": "Show daily values",
+    "itemTrends": "Item trends, 28 day averages",
+    "correlationsTitle": "What moves with what",
+    "correlationsLocked": "{n} of 60 rated sessions. Patterns unlock at 60, because early numbers mislead.",
+    "corrHigher": "{outcome} averages {diff} points higher on days {input}.",
+    "corrLower": "{outcome} averages {diff} points lower on days {input}.",
+    "notEnoughData": "Not enough rated sessions yet. This view fills in as you rate.",
+    "inputPhrases": {
+      "i_train": "you trained",
+      "i_eat": "you ate clean",
+      "i_goal": "you moved your top goal",
+      "i_word": "you honored your commitments",
+      "i_am_session": "the morning session landed",
+      "i_pm_session": "the evening session landed"
+    }
   }
 }
