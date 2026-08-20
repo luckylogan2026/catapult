@@ -1,4 +1,4 @@
-import type { PlaylistId, SessionCompletion } from '../../domain/types';
+import type { Board, PendingRating, PlaylistId, SessionCompletion } from '../../domain/types';
 
 // Streaks: consecutive calendar days with at least one completed
 // session, counted back from today, or from yesterday when today has
@@ -48,9 +48,63 @@ export function mergeCompletions(
   for (const c of [...a, ...b]) {
     const key = `${c.date}:${c.playlistId}`;
     const prev = byKey.get(key);
-    if (!prev || c.completedAt > prev.completedAt) byKey.set(key, c);
+    if (!prev) {
+      byKey.set(key, c);
+      continue;
+    }
+    // Later completion wins the record, but the EARLIEST rating wins
+    // the rating fields: a re-rating on a second device an hour later
+    // is post-practice for the human however fresh the record looks.
+    const later = c.completedAt > prev.completedAt ? c : prev;
+    const earlierRated = [c, prev]
+      .filter((x) => x.ratedAt)
+      .sort((x, y) => (x.ratedAt as string).localeCompare(y.ratedAt as string))[0];
+    const merged: SessionCompletion = { ...later };
+    if (earlierRated && earlierRated.ratedAt !== later.ratedAt) {
+      merged.scores = earlierRated.scores;
+      merged.ratedAt = earlierRated.ratedAt;
+      merged.postShift = earlierRated.postShift;
+    }
+    byKey.set(key, merged);
   }
   return [...byKey.values()].sort((x, y) => x.completedAt.localeCompare(y.completedAt));
+}
+
+/** The same earliest-rating rule for the pending holding area. */
+export function mergePendingRatings(
+  a: PendingRating[],
+  b: PendingRating[],
+): PendingRating[] {
+  const byKey = new Map<string, PendingRating>();
+  for (const p of [...a, ...b]) {
+    const key = `${p.date}:${p.playlistId}`;
+    const prev = byKey.get(key);
+    if (!prev || p.ratedAt < prev.ratedAt) byKey.set(key, p);
+  }
+  return [...byKey.values()].sort((x, y) => x.ratedAt.localeCompare(y.ratedAt));
+}
+
+/** A pending rating for this date and playlist, or a completion that
+ * already carries a rating: either satisfies the pre-practice gate. */
+export function hasRatingFor(board: Board, playlistId: PlaylistId, date = localDate()): boolean {
+  if ((board.pendingRatings ?? []).some((p) => p.date === date && p.playlistId === playlistId)) {
+    return true;
+  }
+  return board.streak.completions.some(
+    (c) => c.date === date && c.playlistId === playlistId && !!c.ratedAt,
+  );
+}
+
+/** Frozen pendings: ratings whose session was never completed. Clean
+ * pre-practice data, kept forever. */
+export function frozenPendings(board: Board): PendingRating[] {
+  const today = localDate();
+  const completed = new Set(
+    board.streak.completions.map((c) => `${c.date}:${c.playlistId}`),
+  );
+  return (board.pendingRatings ?? []).filter(
+    (p) => p.date < today && !completed.has(`${p.date}:${p.playlistId}`),
+  );
 }
 
 /** Records today's completion for a playlist, one entry per day, the
@@ -60,9 +114,20 @@ export function recordCompletion(
   playlistId: PlaylistId,
   note: string,
   priorities = '',
+  rating?: { scores?: Record<string, number>; ratedAt?: string; postShift?: number },
 ): SessionCompletion[] {
   const date = localDate();
+  const existing = completions.find((c) => c.date === date && c.playlistId === playlistId);
   const rest = completions.filter((c) => !(c.date === date && c.playlistId === playlistId));
+  // The first rating of the day is the clean pre-practice one; a second
+  // run's rating follows a dose already administered. Earliest ratedAt
+  // keeps scores, ratedAt, and postShift.
+  const candidates = [existing, rating].filter(
+    (r): r is NonNullable<typeof r> => !!r?.ratedAt,
+  );
+  const keeper = candidates.sort((x, y) =>
+    (x.ratedAt as string).localeCompare(y.ratedAt as string),
+  )[0];
   return [
     ...rest,
     {
@@ -71,6 +136,9 @@ export function recordCompletion(
       completedAt: new Date().toISOString(),
       note: note.trim() || undefined,
       priorities: priorities.trim() || undefined,
+      scores: keeper?.scores,
+      ratedAt: keeper?.ratedAt,
+      postShift: keeper?.postShift,
     },
   ];
 }
