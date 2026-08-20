@@ -213,6 +213,15 @@ export function PageView({
             </div>
           );
         })}
+        {/* A light page under a full-bleed image shows its scrim in the
+            editor too, so the sun and moon toggle is visible here. */}
+        {page.appearance === 'light' &&
+          page.blocks.some((b) => b.slotId === 'background' && b.assetId) && (
+            <div
+              className="pointer-events-none absolute inset-0 bg-white/70"
+              style={{ zIndex: 0 }}
+            />
+          )}
         {/* Item-flow blocks stack below the template slots. */}
         {page.blocks
           .filter((b) => b.slotId?.startsWith('item-'))

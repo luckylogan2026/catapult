@@ -321,7 +321,8 @@
     "ttsDeviceNote": "Voices come from this device. Some Android voices need a one-time download to work offline.",
     "autoAdvanceLabel": "Advance automatically",
     "dwellLabel": "Seconds per page",
-    "autoAdvanceHint": "Off waits for your swipe. On holds each page for its audio, then runs the timer."
+    "autoAdvanceHint": "Off waits for your swipe. On holds each page for its audio, then runs the timer.",
+    "themeTitle": "Theme"
   },
   "playback": {
     "preview": "Play",

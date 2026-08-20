@@ -3,6 +3,8 @@ import { strings } from '../../config';
 import { db } from '../../db/db';
 import { storageEstimate } from '../../db/storage';
 import { useBoardContext } from '../board/BoardContext';
+import { themePresets } from '../../theme/presets';
+import { applyBoardTheme } from '../../theme/applyTheme';
 import { importFiles } from '../../assetPipeline/importAssets';
 import { SyncSection, type useSyncEngine } from '../sync/SyncSection';
 
@@ -163,6 +165,38 @@ export function SettingsPanel({
         </div>
 
         <p className="mt-3 font-body text-sm text-secondary">{s.autosaveNote}</p>
+
+        <div className="mt-4 rounded border border-text-muted/20 p-3">
+          <p className="font-body text-sm font-medium text-text">{s.themeTitle}</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {themePresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => {
+                  const nextTheme = { ...board.theme, presetId: preset.id };
+                  mutate((b) => ({ ...b, theme: nextTheme }));
+                  applyBoardTheme(nextTheme);
+                }}
+                className={`flex items-center gap-2 rounded-md border px-2.5 py-2 text-left font-body text-xs ${
+                  board.theme.presetId === preset.id
+                    ? 'border-primary text-text'
+                    : 'border-text-muted/30 text-text-muted'
+                }`}
+              >
+                <span
+                  className="inline-block h-4 w-4 shrink-0 rounded-full border border-text-muted/40"
+                  style={{ background: preset.colors.background }}
+                />
+                <span
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: preset.colors.primary }}
+                />
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mt-4 rounded border border-text-muted/20 p-3">
           <p className="font-body text-sm font-medium text-text">{s.backupTitle}</p>
