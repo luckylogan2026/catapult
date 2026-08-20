@@ -28,6 +28,8 @@ import { useSyncEngine, ConflictDialog } from '../sync/SyncSection';
 import { MeditationLibraryPanel } from './MeditationLibraryPanel';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
 import { pageIsLight, themeIsLightNow } from '../../theme/pageAppearance';
+import { RatingsScreen } from '../tracker/RatingsScreen';
+import { hasRatingFor } from '../playback/streak';
 import type { PlaylistId } from '../../domain/types';
 
 const e = strings.editor;
@@ -52,6 +54,7 @@ function EditorInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [playing, setPlaying] = useState<PlaylistId | null>(null);
+  const [, setRatingTick] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
   const syncEngine = useSyncEngine();
@@ -490,7 +493,12 @@ function EditorInner() {
 
       <ConflictDialog engine={syncEngine} />
 
-      {playing && <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />}
+      {playing &&
+        (!hasRatingFor(board, playing) ? (
+          <RatingsScreen playlistId={playing} onDone={() => setRatingTick((n) => n + 1)} />
+        ) : (
+          <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />
+        ))}
 
       {/* Page-level drop target: anywhere on the window that is not a slot. */}
       <WindowDrop onFiles={(files) => pageId && importFilesTo(files, { pageId })} />
