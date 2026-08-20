@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { strings } from '../../config';
 import type { PlaylistId } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
-import { computeStreak, recordCompletion } from './streak';
+import { computeStreak, localDate, recordCompletion } from './streak';
 
 const c = strings.completion;
 
@@ -83,10 +83,23 @@ export function CompletionScreen({
 
   const finish = () => {
     recRef.current?.stop();
-    mutate((b) => ({
-      ...b,
-      streak: { completions: recordCompletion(b.streak.completions, playlistId, note, priorities) },
-    }));
+    mutate((b) => {
+      // Today's pending rating graduates into the completion record;
+      // only a completed session moves it out of the holding area.
+      const date = localDate();
+      const pending = (b.pendingRatings ?? []).find(
+        (p) => p.date === date && p.playlistId === playlistId,
+      );
+      return {
+        ...b,
+        streak: {
+          completions: recordCompletion(b.streak.completions, playlistId, note, priorities, pending),
+        },
+        pendingRatings: pending
+          ? (b.pendingRatings ?? []).filter((p) => p !== pending)
+          : b.pendingRatings,
+      };
+    });
     onClose();
   };
 
