@@ -27,6 +27,7 @@ import { RecordButton } from './RecordButton';
 import { useSyncEngine, ConflictDialog } from '../sync/SyncSection';
 import { MeditationLibraryPanel } from './MeditationLibraryPanel';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
+import { pageIsLight, themeIsLightNow } from '../../theme/pageAppearance';
 import type { PlaylistId } from '../../domain/types';
 
 const e = strings.editor;
@@ -288,13 +289,19 @@ function EditorInner() {
                     onClick={() =>
                       mutate((b) =>
                         updatePage(b, page.id, {
-                          appearance: page.appearance === 'light' ? undefined : 'light',
+                          appearance: pageIsLight(page)
+                            ? themeIsLightNow()
+                              ? 'dark'
+                              : undefined
+                            : themeIsLightNow()
+                              ? undefined
+                              : 'light',
                         }),
                       )
                     }
                     className="rounded border border-text-muted/30 px-2 py-1 font-body text-sm leading-none text-text-muted hover:text-text"
                   >
-                    {page.appearance === 'light' ? '☀' : '☾'}
+                    {pageIsLight(page) ? '☀' : '☾'}
                   </button>
                 )}
                 {def.textFlow && def.authoring === undefined && (

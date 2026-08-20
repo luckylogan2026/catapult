@@ -4,6 +4,7 @@ import type { Board, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { kvGet, kvSet } from '../../db/kv';
 import { acquireToken, clientIdConfigured, syncOnce, type SyncOutcome } from './drive';
+import { mergeCompletions } from '../playback/streak';
 
 const y = strings.sync;
 
@@ -45,7 +46,16 @@ export function useSyncEngine() {
         const outcome: SyncOutcome = await syncOnce(b);
         if (outcome.kind === 'pushed') setStatus(y.statusPushed);
         else if (outcome.kind === 'pulled') {
-          const stored = await adoptBoard(outcome.board);
+          const merged: Board = {
+            ...outcome.board,
+            streak: {
+              completions: mergeCompletions(
+                b.streak?.completions ?? [],
+                outcome.board.streak?.completions ?? [],
+              ),
+            },
+          };
+          const stored = await adoptBoard(merged);
           await kvSet('lastSyncedRevision', stored.revision);
           setStatus(y.statusPulled);
         } else if (outcome.kind === 'conflict') {
@@ -87,8 +97,17 @@ export function useSyncEngine() {
       setConflict(null);
       if (choice === 'remote') {
         // The adopted board's stamped revision becomes the synced marker,
-        // so the next comparison sees both sides level.
-        const stored = await adoptBoard(c.remoteBoard);
+        // so the next comparison sees both sides level. Completions
+        // always merge; a conflict must not erase finished sessions.
+        const stored = await adoptBoard({
+          ...c.remoteBoard,
+          streak: {
+            completions: mergeCompletions(
+              b.streak?.completions ?? [],
+              c.remoteBoard.streak?.completions ?? [],
+            ),
+          },
+        });
         await kvSet('lastSyncedRevision', stored.revision);
         setStatus(y.statusPulled);
         return;
@@ -114,7 +133,17 @@ export function useSyncEngine() {
         }));
       }
       // Keep local and keep both end with this device's board pushed up
-      // as the truth, skipping conflict detection once.
+      // as the truth, skipping conflict detection once, with the
+      // remote's completions folded in first.
+      mutate((cur) => ({
+        ...cur,
+        streak: {
+          completions: mergeCompletions(
+            cur.streak?.completions ?? [],
+            c.remoteBoard.streak?.completions ?? [],
+          ),
+        },
+      }));
       busy.current = true;
       try {
         setStatus(y.syncing);

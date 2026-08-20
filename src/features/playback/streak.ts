@@ -37,6 +37,22 @@ export function computeStreak(
   return streak;
 }
 
+/** Union of two completion histories, one entry per day and playlist,
+ * the later completion winning. Sync merges with this so no device can
+ * erase another's finished sessions. */
+export function mergeCompletions(
+  a: SessionCompletion[],
+  b: SessionCompletion[],
+): SessionCompletion[] {
+  const byKey = new Map<string, SessionCompletion>();
+  for (const c of [...a, ...b]) {
+    const key = `${c.date}:${c.playlistId}`;
+    const prev = byKey.get(key);
+    if (!prev || c.completedAt > prev.completedAt) byKey.set(key, c);
+  }
+  return [...byKey.values()].sort((x, y) => x.completedAt.localeCompare(y.completedAt));
+}
+
 /** Records today's completion for a playlist, one entry per day, the
  * note replacing any earlier one. */
 export function recordCompletion(
