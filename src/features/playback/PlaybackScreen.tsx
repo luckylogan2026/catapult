@@ -165,6 +165,8 @@ export function PlaybackScreen({
   // Keyboard: arrows, space, escape.
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
+      const el = ev.target as HTMLElement;
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) return;
       if (ev.key === 'ArrowRight' || ev.key === ' ') {
         ev.preventDefault();
         advance();
