@@ -2,7 +2,6 @@ import type { Page } from '../../domain/types';
 import { FormattedText } from '../authoring/FormattedText';
 import { MediaContent } from '../authoring/MediaContent';
 import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
-import { pageIsLight } from '../../theme/pageAppearance';
 
 // Deviation a: text pages render mobile-native during playback instead
 // of scaling the canvas down to unreadable sizes. Blocks stack in slot
@@ -40,7 +39,7 @@ export function TextFlowContent({ page }: { page: Page }) {
                   : b.style?.color && b.style.color !== 'text'
                     ? b.style.color
                     : 'var(--tc-text)',
-              textShadow: bg && !pageIsLight(page) ? '0 1px 8px rgba(0,0,0,0.6)' : undefined,
+              textShadow: bg && page.appearance !== 'light' ? '0 1px 8px rgba(0,0,0,0.6)' : undefined,
             }}
           />
         );
@@ -63,7 +62,7 @@ export function TextFlowView({ page }: { page: Page }) {
       {bg && (
         <div className="absolute inset-0">
           <MediaContent block={bg} variant="canvas" />
-          <div className={pageIsLight(page) ? 'absolute inset-0 bg-white/70' : 'absolute inset-0 bg-black/45'} />
+          <div className={page.appearance === 'light' ? 'absolute inset-0 bg-white/70' : 'absolute inset-0 bg-black/45'} />
         </div>
       )}
       <div
@@ -93,7 +92,7 @@ export function TextFlowView({ page }: { page: Page }) {
                       : b.style?.color && b.style.color !== 'text'
                         ? b.style.color
                         : 'var(--tc-text)',
-                  textShadow: bg && !pageIsLight(page) ? '0 1px 8px rgba(0,0,0,0.6)' : undefined,
+                  textShadow: bg && page.appearance !== 'light' ? '0 1px 8px rgba(0,0,0,0.6)' : undefined,
                 }}
               />
             );

@@ -18,7 +18,7 @@ import { TextFlowView, TextFlowContent } from './TextFlowView';
 import { Teleprompter } from './Teleprompter';
 import { VisionFillView } from './VisionFillView';
 import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
-import { appearanceVars, pageIsLight } from '../../theme/pageAppearance';
+import { appearanceVars } from '../../theme/pageAppearance';
 import { MeditationPlayer } from './MeditationPlayer';
 import { FormattedText } from '../authoring/FormattedText';
 
@@ -114,7 +114,7 @@ export function ScreenView({
             {bg && (
               <div
                 className={
-                  pageIsLight(screen.page)
+                  screen.page.appearance === 'light'
                     ? 'absolute inset-0 bg-white/70'
                     : 'absolute inset-0 bg-black/45'
                 }

@@ -9,7 +9,7 @@ import { CanvasBlockFrame, type SnapLines } from './CanvasBlockFrame';
 import { textStyleCss } from './blockStyle';
 import { FormattedText } from './FormattedText';
 import { fontStack } from '../../theme/fontChoices';
-import { appearanceVars, pageIsLight } from '../../theme/pageAppearance';
+import { appearanceVars } from '../../theme/pageAppearance';
 import { swapSlots, updateBlock } from './boardOps';
 import { useBoardContext } from '../board/BoardContext';
 
@@ -215,7 +215,7 @@ export function PageView({
         })}
         {/* A light page under a full-bleed image shows its scrim in the
             editor too, so the sun and moon toggle is visible here. */}
-        {pageIsLight(page) &&
+        {page.appearance === 'light' &&
           page.blocks.some((b) => b.slotId === 'background' && b.assetId) && (
             <div
               className="pointer-events-none absolute inset-0 bg-white/70"
