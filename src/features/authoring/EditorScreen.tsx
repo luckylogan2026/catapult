@@ -58,6 +58,8 @@ function EditorInner() {
   const [playing, setPlaying] = useState<PlaylistId | null>(null);
   const [, setRatingTick] = useState(0);
   const [progressOpen, setProgressOpen] = useState(false);
+  const [sessionSaved, setSessionSaved] = useState(false);
+  const savedTimer = useRef<number | undefined>(undefined);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
   const syncEngine = useSyncEngine();
@@ -495,6 +497,12 @@ function EditorInner() {
 
       {progressOpen && <ProgressView onClose={() => setProgressOpen(false)} />}
 
+      {sessionSaved && (
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-text-muted/25 bg-surface px-5 py-2 font-body text-sm text-text shadow-lg">
+          {strings.completion.savedNotice}
+        </div>
+      )}
+
       {libraryOpen && <MeditationLibraryPanel onClose={() => setLibraryOpen(false)} />}
 
       <ConflictDialog engine={syncEngine} />
@@ -509,7 +517,16 @@ function EditorInner() {
             onCancel={() => setPlaying(null)}
           />
         ) : (
-          <PlaybackScreen playlistId={playing} onExit={() => setPlaying(null)} />
+          <PlaybackScreen
+            playlistId={playing}
+            onExit={() => setPlaying(null)}
+            onComplete={() => {
+              setPlaying(null);
+              setSessionSaved(true);
+              window.clearTimeout(savedTimer.current);
+              savedTimer.current = window.setTimeout(() => setSessionSaved(false), 4000);
+            }}
+          />
         ))}
 
       {/* Page-level drop target: anywhere on the window that is not a slot. */}

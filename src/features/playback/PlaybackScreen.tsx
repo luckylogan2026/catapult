@@ -25,9 +25,13 @@ const EDGE_DEAD_ZONE = 24;
 export function PlaybackScreen({
   playlistId,
   onExit,
+  onComplete,
 }: {
   playlistId: PlaylistId;
   onExit: () => void;
+  /** Called instead of onExit when the session ended via Save and
+   * finish, so the caller can confirm the save. */
+  onComplete?: () => void;
 }) {
   const { board, mutate } = useBoardContext();
   const [screens, setScreens] = useState<Screen[] | null>(null);
@@ -327,7 +331,7 @@ export function PlaybackScreen({
           onBack={() => setCompleted(false)}
           onClose={() => {
             stop();
-            onExit();
+            (onComplete ?? onExit)();
           }}
         />
       )}

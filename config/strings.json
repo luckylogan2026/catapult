@@ -352,7 +352,8 @@
     "dictateStop": "Stop listening",
     "finish": "Save and finish",
     "prioritiesPlaceholder": "Top 3 priorities for today",
-    "back": "Back"
+    "back": "Back",
+    "savedNotice": "Session saved"
   },
   "sync": {
     "title": "Google Drive sync",
