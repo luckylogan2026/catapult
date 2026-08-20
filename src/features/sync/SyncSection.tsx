@@ -44,8 +44,13 @@ export function useSyncEngine() {
         setConnected(true);
         setStatus(y.syncing);
         const outcome: SyncOutcome = await syncOnce(b);
-        if (outcome.kind === 'pushed') setStatus(y.statusPushed);
-        else if (outcome.kind === 'pulled') {
+        if (outcome.kind === 'pushed') {
+          setStatus(
+            outcome.journalError
+              ? y.journalFailed.replace('{code}', outcome.journalError)
+              : y.statusPushed,
+          );
+        } else if (outcome.kind === 'pulled') {
           const merged: Board = {
             ...outcome.board,
             streak: {
@@ -68,7 +73,11 @@ export function useSyncEngine() {
         } else if (outcome.kind === 'error') {
           setStatus(y.statusError);
         } else {
-          setStatus(y.statusIdle);
+          setStatus(
+            outcome.journalError
+              ? y.journalFailed.replace('{code}', outcome.journalError)
+              : y.statusIdle,
+          );
         }
       } finally {
         busy.current = false;
@@ -171,7 +180,16 @@ export function useSyncEngine() {
     [conflict, adoptBoard, mutate],
   );
 
-  return { status, connected, conflict, resolveConflict, syncNow: () => run(true) };
+  return {
+    status,
+    connected,
+    conflict,
+    resolveConflict,
+    syncNow: () => run(true),
+    // Quiet immediate push, for natural sync points like a finished
+    // session. Never opens the sign-in popup.
+    syncSoon: () => run(false),
+  };
 }
 
 export function SyncSection({

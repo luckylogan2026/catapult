@@ -234,8 +234,8 @@ async function downloadFile(fileId: string): Promise<Blob> {
 }
 
 export type SyncOutcome =
-  | { kind: 'idle' }
-  | { kind: 'pushed'; assetsUploaded: number }
+  | { kind: 'idle'; journalError?: string }
+  | { kind: 'pushed'; assetsUploaded: number; journalError?: string }
   | { kind: 'pulled'; board: Board; assetsDownloaded: number }
   | { kind: 'conflict'; remoteBoard: Board; remoteEdited: string; localEdited: string }
   | { kind: 'error'; message: string };
@@ -260,9 +260,9 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     const remoteAhead = !!remote && remote.revision > lastSynced;
 
     if (forcePush) {
-      const uploaded = await pushBoard(board, folderId, files, boardFile?.id);
+      const pushed = await pushBoard(board, folderId, files, boardFile?.id);
       await kvSet('lastSyncedRevision', board.revision);
-      return { kind: 'pushed', assetsUploaded: uploaded };
+      return { kind: 'pushed', assetsUploaded: pushed.uploaded, journalError: pushed.journalError ?? undefined };
     }
 
     if (remote && remoteAhead && localAhead && remote.revision !== board.revision) {
@@ -289,23 +289,26 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
 
     // Push: local ahead, or nothing remote yet.
     if (localAhead || !remote) {
-      const uploaded = await pushBoard(board, folderId, files, boardFile?.id);
+      const pushed = await pushBoard(board, folderId, files, boardFile?.id);
       await kvSet('lastSyncedRevision', board.revision);
-      return { kind: 'pushed', assetsUploaded: uploaded };
+      return { kind: 'pushed', assetsUploaded: pushed.uploaded, journalError: pushed.journalError ?? undefined };
     }
 
+    let journalError: string | null = null;
     if (
       !files.some((f) => f.name === 'Journal') &&
       ((board.streak?.completions?.length ?? 0) > 0 || frozenPendings(board).length > 0)
     ) {
-      await syncJournalSheet(board, folderId, files);
+      journalError = await syncJournalSheet(board, folderId, files);
     }
     const repaired = await repairAssets(board, folderId, files);
-    if (repaired.uploaded) return { kind: 'pushed', assetsUploaded: repaired.uploaded };
+    if (repaired.uploaded) {
+      return { kind: 'pushed', assetsUploaded: repaired.uploaded, journalError: journalError ?? undefined };
+    }
     if (repaired.downloaded) {
       return { kind: 'pulled', board, assetsDownloaded: repaired.downloaded };
     }
-    return { kind: 'idle' };
+    return { kind: 'idle', journalError: journalError ?? undefined };
   } catch (err) {
     return { kind: 'error', message: err instanceof Error ? err.message : 'sync failed' };
   }
@@ -339,11 +342,19 @@ function streakAsOf(completions: SessionCompletion[], date: string): number {
   return streak;
 }
 
-async function syncJournalSheet(board: Board, folderId: string, files: RemoteFile[]): Promise<void> {
+/** Rebuilds the Journal spreadsheet. Returns null on success (or when
+ * there is nothing to write), else a short error the status line can
+ * show, because a silent console.warn proved undiagnosable in the
+ * field. */
+async function syncJournalSheet(
+  board: Board,
+  folderId: string,
+  files: RemoteFile[],
+): Promise<string | null> {
   try {
     const completions = board.streak?.completions ?? [];
     const frozen = frozenPendings(board);
-    if (!completions.length && !frozen.length) return;
+    if (!completions.length && !frozen.length) return null;
     let sheet = files.find((f) => f.name === 'Journal');
     let sheetId = sheet?.id;
     if (!sheetId) {
@@ -356,9 +367,10 @@ async function syncJournalSheet(board: Board, folderId: string, files: RemoteFil
           parents: [folderId],
         }),
       });
+      if (!created.ok) return `create ${created.status}`;
       sheetId = (await created.json()).id as string;
     }
-    if (!sheetId) return;
+    if (!sheetId) return 'create failed';
 
     // One row per session: completions, plus frozen pendings whose
     // session never happened. Dropping the frozen rows would make the
@@ -444,9 +456,12 @@ async function syncJournalSheet(board: Board, folderId: string, files: RemoteFil
       // A 403 here usually means the Sheets API is not enabled in the
       // Cloud project. The board sync stays whole either way.
       console.warn('journal sheet write failed', write.status, await write.text().catch(() => ''));
+      return `write ${write.status}`;
     }
+    return null;
   } catch (err) {
     console.warn('journal sheet sync failed', err);
+    return err instanceof Error ? err.message : 'failed';
   }
 }
 
@@ -482,7 +497,7 @@ async function pushBoard(
   folderId: string,
   files: RemoteFile[],
   boardFileId?: string,
-): Promise<number> {
+): Promise<{ uploaded: number; journalError: string | null }> {
   const remoteNames = new Set(files.map((f) => f.name));
   const wanted = referencedAssetIds(board);
   let uploaded = 0;
@@ -500,7 +515,7 @@ async function pushBoard(
     new Blob([JSON.stringify(board)], { type: 'application/json' }),
     boardFileId,
   );
-  await syncJournalSheet(board, folderId, files);
+  const journalError = await syncJournalSheet(board, folderId, files);
   // Garbage collection: remote assets no board references, untouched for
   // thirty days, go away.
   const grace = Date.now() - 30 * 24 * 3600 * 1000;
@@ -510,7 +525,7 @@ async function pushBoard(
       await api(`/files/${f.id}`, { method: 'DELETE' }).catch(() => {});
     }
   }
-  return uploaded;
+  return { uploaded, journalError };
 }
 
 async function pullAssets(remote: Board, files: RemoteFile[]): Promise<number> {

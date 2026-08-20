@@ -373,7 +373,8 @@
     "keepRemote": "Keep Drive",
     "keepBoth": "Keep both",
     "disconnect": "Disconnect",
-    "reconnectHint": "Session paused. Tap Sync now to reconnect."
+    "reconnectHint": "Session paused. Tap Sync now to reconnect.",
+    "journalFailed": "Journal sheet failed ({code}). Tap Sync now to retry."
   },
   "meditation": {
     "libraryTitle": "Meditation library",
