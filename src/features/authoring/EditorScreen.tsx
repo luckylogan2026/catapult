@@ -30,6 +30,7 @@ import { PlaybackScreen } from '../playback/PlaybackScreen';
 import { pageIsLight, themeIsLightNow } from '../../theme/pageAppearance';
 import { RatingsScreen } from '../tracker/RatingsScreen';
 import { AnchorsScreen, shouldOfferAnchors } from '../tracker/AnchorsScreen';
+import { ProgressView } from '../tracker/ProgressView';
 import { hasRatingFor } from '../playback/streak';
 import type { PlaylistId } from '../../domain/types';
 
@@ -56,6 +57,7 @@ function EditorInner() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [playing, setPlaying] = useState<PlaylistId | null>(null);
   const [, setRatingTick] = useState(0);
+  const [progressOpen, setProgressOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
   const syncEngine = useSyncEngine();
@@ -135,6 +137,7 @@ function EditorInner() {
           <TopButton label={strings.common.undo} disabled={!canUndo} onClick={undo} />
           <TopButton label={strings.common.redo} disabled={!canRedo} onClick={redo} />
           <TopButton label={e.outputOrder} onClick={() => setView('order')} />
+          <TopButton label={strings.tracker.progress} onClick={() => setProgressOpen(true)} />
           <TopButton label={e.settings} onClick={() => setSettingsOpen(true)} />
           <button
             type="button"
@@ -489,6 +492,8 @@ function EditorInner() {
       )}
 
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} syncEngine={syncEngine} />}
+
+      {progressOpen && <ProgressView onClose={() => setProgressOpen(false)} />}
 
       {libraryOpen && <MeditationLibraryPanel onClose={() => setLibraryOpen(false)} />}
 
