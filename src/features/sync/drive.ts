@@ -341,13 +341,18 @@ async function syncJournalSheet(board: Board, folderId: string, files: RemoteFil
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    await fetch(`${SHEETS}/${sheetId}/values/A1?valueInputOption=RAW`, {
+    const write = await fetch(`${SHEETS}/${sheetId}/values/A1?valueInputOption=RAW`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ values }),
     });
-  } catch {
-    // The journal sheet is a convenience mirror; sync itself stays whole.
+    if (!write.ok) {
+      // A 403 here usually means the Sheets API is not enabled in the
+      // Cloud project. The board sync stays whole either way.
+      console.warn('journal sheet write failed', write.status, await write.text().catch(() => ''));
+    }
+  } catch (err) {
+    console.warn('journal sheet sync failed', err);
   }
 }
 
