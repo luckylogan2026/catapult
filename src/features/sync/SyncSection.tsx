@@ -4,7 +4,7 @@ import type { Board, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { kvGet, kvSet } from '../../db/kv';
 import { acquireToken, clientIdConfigured, syncOnce, type SyncOutcome } from './drive';
-import { mergeCompletions } from '../playback/streak';
+import { mergeCompletions, mergePendingRatings } from '../playback/streak';
 
 const y = strings.sync;
 
@@ -54,6 +54,10 @@ export function useSyncEngine() {
                 outcome.board.streak?.completions ?? [],
               ),
             },
+            pendingRatings: mergePendingRatings(
+              b.pendingRatings ?? [],
+              outcome.board.pendingRatings ?? [],
+            ),
           };
           const stored = await adoptBoard(merged);
           await kvSet('lastSyncedRevision', stored.revision);
@@ -107,6 +111,10 @@ export function useSyncEngine() {
               c.remoteBoard.streak?.completions ?? [],
             ),
           },
+          pendingRatings: mergePendingRatings(
+            b.pendingRatings ?? [],
+            c.remoteBoard.pendingRatings ?? [],
+          ),
         });
         await kvSet('lastSyncedRevision', stored.revision);
         setStatus(y.statusPulled);
@@ -143,6 +151,10 @@ export function useSyncEngine() {
             c.remoteBoard.streak?.completions ?? [],
           ),
         },
+        pendingRatings: mergePendingRatings(
+          cur.pendingRatings ?? [],
+          c.remoteBoard.pendingRatings ?? [],
+        ),
       }));
       busy.current = true;
       try {
