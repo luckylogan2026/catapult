@@ -57,6 +57,9 @@ function EditorInner() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [playing, setPlaying] = useState<PlaylistId | null>(null);
   const [, setRatingTick] = useState(0);
+  // Skip for now bypasses the rating gate for this launch only; the
+  // questions come back next time because nothing is written.
+  const [ratingSkippedFor, setRatingSkippedFor] = useState<PlaylistId | null>(null);
   const [progressOpen, setProgressOpen] = useState(false);
   const [sessionSaved, setSessionSaved] = useState(false);
   const savedTimer = useRef<number | undefined>(undefined);
@@ -168,6 +171,7 @@ function EditorInner() {
                       className={`rounded px-3 py-1.5 text-left font-body text-sm ${isDefault ? 'font-medium text-text' : 'text-text-muted'} hover:bg-background`}
                       onClick={() => {
                         setPreviewOpen(false);
+                        setRatingSkippedFor(null);
                         setPlaying(pl);
                       }}
                     >
@@ -511,11 +515,12 @@ function EditorInner() {
       {playing &&
         (shouldOfferAnchors(board) ? (
           <AnchorsScreen onDone={() => setRatingTick((n) => n + 1)} />
-        ) : !hasRatingFor(board, playing) ? (
+        ) : !hasRatingFor(board, playing) && ratingSkippedFor !== playing ? (
           <RatingsScreen
             playlistId={playing}
             onDone={() => setRatingTick((n) => n + 1)}
             onCancel={() => setPlaying(null)}
+            onSkip={() => setRatingSkippedFor(playing)}
           />
         ) : (
           <PlaybackScreen

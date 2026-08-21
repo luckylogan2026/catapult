@@ -34,10 +34,14 @@ export function RatingsScreen({
   playlistId,
   onDone,
   onCancel,
+  onSkip,
 }: {
   playlistId: PlaylistId;
   onDone: () => void;
   onCancel: () => void;
+  /** Skip for now: straight into the session, nothing written, so the
+   * questions return on the next launch. */
+  onSkip: () => void;
 }) {
   const { board, mutate } = useBoardContext();
   const items = useMemo(() => itemsFor(playlistId), [playlistId]);
@@ -47,8 +51,9 @@ export function RatingsScreen({
   const dragging = useRef<string | null>(null);
   const swipe = useRef<{ x: number; y: number } | null>(null);
 
-  // Escape backs out to the editor without writing anything: unlike
-  // Skip, the gate stays armed for the next launch.
+  // Escape backs out to the editor without writing anything. Skip for
+  // now goes on into the session, also writing nothing. Either way the
+  // gate stays armed for the next launch; only a saved rating clears it.
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') onCancel();
@@ -106,7 +111,7 @@ export function RatingsScreen({
         )}
         <button
           type="button"
-          onClick={() => writePending(undefined)}
+          onClick={onSkip}
           className="rounded px-2 py-1 font-body text-sm text-text-muted hover:text-text"
         >
           {tk.skip}
