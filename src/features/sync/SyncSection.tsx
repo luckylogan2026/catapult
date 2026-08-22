@@ -21,6 +21,9 @@ export function useSyncEngine() {
   const { board, mutate, adoptBoard } = useBoardContext();
   const [status, setStatus] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  // True while a background sync could not sign in silently: the
+  // header shows a loud reconnect pill instead of quiet grey text.
+  const [paused, setPaused] = useState(false);
   const [conflict, setConflict] = useState<ConflictState | null>(null);
   const busy = useRef(false);
   const debounce = useRef<number | undefined>(undefined);
@@ -39,8 +42,10 @@ export function useSyncEngine() {
       try {
         if (!(await acquireToken(interactive))) {
           setStatus(interactive ? y.statusError : y.reconnectHint);
+          if (!interactive) setPaused(true);
           return;
         }
+        setPaused(false);
         setConnected(true);
         setStatus(y.syncing);
         const outcome: SyncOutcome = await syncOnce(b);
@@ -182,6 +187,7 @@ export function useSyncEngine() {
 
   return {
     status,
+    paused,
     connected,
     conflict,
     resolveConflict,

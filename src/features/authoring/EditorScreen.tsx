@@ -132,11 +132,15 @@ function EditorInner() {
         {syncEngine.status && (
           <button
             type="button"
-            className="truncate font-body text-xs text-text-muted hover:text-text"
+            className={
+              syncEngine.paused
+                ? 'truncate rounded-full bg-amber-400 px-2.5 py-0.5 font-body text-xs font-semibold text-black hover:bg-amber-300'
+                : 'truncate font-body text-xs text-text-muted hover:text-text'
+            }
             onClick={() => void syncEngine.syncNow()}
             title={strings.sync.title}
           >
-            {syncEngine.status}
+            {syncEngine.paused ? strings.sync.pausedPill : syncEngine.status}
           </button>
         )}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
