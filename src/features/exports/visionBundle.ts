@@ -117,9 +117,27 @@ export type ImportResult =
 // (content addressing makes re-import harmless); the caller decides
 // when to adopt the board, after confirming the replacement.
 export async function importVisionBundle(file: Blob): Promise<ImportResult> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  // A bare board.json (for example a version downloaded from Drive's
+  // version history) loads too. Its assets are already on this device
+  // under the same content ids, so nothing else is needed.
+  if (bytes.length && bytes[0] === 0x7b /* { */) {
+    try {
+      const board = JSON.parse(new TextDecoder().decode(bytes)) as Board;
+      if (!board?.id || !Array.isArray(board.pages)) {
+        return { ok: false, reason: strings.settings.importInvalid };
+      }
+      if ((board.schemaVersion ?? 0) > SCHEMA_VERSION) {
+        return { ok: false, reason: strings.settings.importNewer };
+      }
+      return { ok: true, board, assetCount: 0 };
+    } catch {
+      return { ok: false, reason: strings.settings.importInvalid };
+    }
+  }
   let entries: Record<string, Uint8Array>;
   try {
-    entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
+    entries = unzipSync(bytes);
   } catch {
     return { ok: false, reason: strings.settings.importInvalid };
   }

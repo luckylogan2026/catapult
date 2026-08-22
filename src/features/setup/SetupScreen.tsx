@@ -151,7 +151,7 @@ export function SetupScreen() {
         <input
           ref={importRef}
           type="file"
-          accept=".vision,application/octet-stream,application/zip"
+          accept=".vision,.json,application/json,application/octet-stream,application/zip"
           hidden
           onChange={(ev) => {
             const f = ev.target.files?.[0];
