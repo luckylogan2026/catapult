@@ -532,9 +532,12 @@ function EditorInner() {
               window.clearTimeout(savedTimer.current);
               savedTimer.current = window.setTimeout(() => setSessionSaved(false), 4000);
               // A finished session is the natural moment to push; don't
-              // wait out the thirty-second debounce. The short defer
-              // lets the completion mutation land in board state first.
-              window.setTimeout(() => void syncEngine.syncSoon(), 800);
+              // wait out the thirty-second debounce. Interactive, so an
+              // expired sign-in asks instead of quietly standing down.
+              // The short defer lets the completion mutation land in
+              // board state first and stays inside the tap's activation
+              // window for the popup.
+              window.setTimeout(() => void syncEngine.syncNow(), 800);
             }}
           />
         ))}

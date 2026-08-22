@@ -148,7 +148,32 @@ export class MeditationEngine {
       el.remove();
       this.element = null;
     }
-    await new Promise((r) => window.setTimeout(r, 450));
+    // A live-stream element plays its first moments time-compressed
+    // while its playout clock catches up to the stream (helium speech).
+    // Rather than guess a settle time, watch the element's clock and
+    // schedule only after it has advanced at real-time speed for two
+    // consecutive windows, bounded at four seconds.
+    if (this.element) {
+      const t0 = performance.now();
+      let lastCt = el.currentTime;
+      let lastWall = performance.now();
+      let steady = 0;
+      while (performance.now() - t0 < 4000 && this.ctx === ctx) {
+        await new Promise((r) => window.setTimeout(r, 500));
+        const ct = el.currentTime;
+        const wall = performance.now();
+        const rate = (ct - lastCt) / Math.max(0.001, (wall - lastWall) / 1000);
+        lastCt = ct;
+        lastWall = wall;
+        if (rate > 0.93 && rate < 1.07) {
+          if (++steady >= 2) break;
+        } else {
+          steady = 0;
+        }
+      }
+    } else {
+      await new Promise((r) => window.setTimeout(r, 450));
+    }
     if (this.ctx !== ctx) return;
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata(meta);
@@ -156,7 +181,10 @@ export class MeditationEngine {
       navigator.mediaSession.setActionHandler('pause', () => void this.pause());
     }
 
-    this.scheduleFrom(0);
+    // First start gets a longer silent lead than seeks: the stream
+    // element's clock can still drift in the first second after it
+    // reads steady.
+    this.scheduleFrom(0, 1.5);
 
     this.ticker = window.setInterval(() => {
       if (!this.ctx || this.ctx.state === 'suspended') return;
@@ -185,7 +213,7 @@ export class MeditationEngine {
   // Clears scheduled sources and reschedules everything from a content
   // offset in seconds, starting mid-buffer where the offset lands
   // inside a recording.
-  private scheduleFrom(offset: number): void {
+  private scheduleFrom(offset: number, lead = 0.5): void {
     const ctx = this.ctx;
     const dest = this.dest;
     if (!ctx || !dest) return;
@@ -200,7 +228,7 @@ export class MeditationEngine {
     this.voiceNodes = [];
     this.timeline = [];
 
-    const startAt = ctx.currentTime + 0.5;
+    const startAt = ctx.currentTime + lead;
     this.startAtTime = startAt;
     this.offsetBase = Math.min(Math.max(0, offset), this.contentTotal);
 

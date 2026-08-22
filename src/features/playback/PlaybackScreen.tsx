@@ -100,6 +100,35 @@ export function PlaybackScreen({
     },
     [setDucked],
   );
+  // Keep the screen on for the whole run: a session is read, not
+  // tapped, and the phone's idle timeout would otherwise darken the
+  // affirmations mid-roll. Re-acquired when the tab comes back, and
+  // the phone's own power button still works as usual.
+  useEffect(() => {
+    type WakeLockLike = { release: () => Promise<void> };
+    type NavWake = { wakeLock?: { request: (t: 'screen') => Promise<WakeLockLike> } };
+    const nav = navigator as unknown as NavWake;
+    if (!nav.wakeLock) return;
+    let lock: WakeLockLike | null = null;
+    let alive = true;
+    const acquire = async () => {
+      if (!alive || document.visibilityState !== 'visible') return;
+      try {
+        lock = await nav.wakeLock!.request('screen');
+      } catch {
+        // Denied or unsupported in this context: the run still plays.
+      }
+    };
+    const onVis = () => void acquire();
+    void acquire();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      alive = false;
+      document.removeEventListener('visibilitychange', onVis);
+      void lock?.release().catch(() => {});
+    };
+  }, []);
+
   const { pendingTap, startPending, stop } = useScreenAudio(
     board!,
     playlist,
