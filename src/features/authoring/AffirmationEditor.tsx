@@ -194,7 +194,9 @@ function AffirmationRow({
   };
 
   return (
-    <div className="flex items-center gap-3 rounded border border-text-muted/20 bg-surface/50 p-2">
+    // Phones: the text takes its own full-width line above the controls;
+    // wide screens keep the single row.
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded border border-text-muted/20 bg-surface/50 p-2 md:flex-nowrap">
       <input
         type="checkbox"
         checked={checked}
@@ -234,7 +236,7 @@ function AffirmationRow({
           void pickImage(files);
         }}
       />
-      <div className="min-w-0 grow">
+      <div className="order-first w-full min-w-0 md:order-none md:w-auto md:grow">
         <input
           value={affirmation.text}
           placeholder={e.affirmationTextLabel}
@@ -247,6 +249,7 @@ function AffirmationRow({
           </span>
         )}
       </div>
+      <div className="ml-auto flex items-center gap-2">
       <RecordButton onRecorded={(id) => onPatch({ audioAssetId: id })} />
       {affirmation.audioAssetId && (
         <button
@@ -271,6 +274,7 @@ function AffirmationRow({
       >
         ✕
       </button>
+      </div>
     </div>
   );
 }
