@@ -376,7 +376,12 @@
     "reconnectHint": "Session paused. Tap Sync now to reconnect.",
     "journalFailed": "Journal sheet failed ({code}). Tap Sync now to retry.",
     "pausedPill": "Sync paused. Tap to reconnect",
-    "details": "Sync details"
+    "details": "Sync details",
+    "historyLoad": "Show Drive history",
+    "historyEmpty": "No earlier versions on Drive.",
+    "historyRestore": "Restore",
+    "historyConfirm": "Replace the board on this device with the Drive version from {time}? It then syncs up as your current board. You can pick another version afterwards if this is not the one.",
+    "historyRestored": "Restored on this device. Check the page, then tap Sync now (or wait a moment) and it becomes the version on Drive."
   },
   "meditation": {
     "libraryTitle": "Meditation library",

@@ -6,8 +6,11 @@ import { kvGet, kvSet } from '../../db/kv';
 import {
   acquireToken,
   clientIdConfigured,
+  downloadBoardRevision,
+  listBoardRevisions,
   markRemoteSeen,
   syncOnce,
+  type BoardRevision,
   type SyncDiag,
   type SyncOutcome,
 } from './drive';
@@ -217,7 +220,34 @@ export function SyncSection({
   engine: ReturnType<typeof useSyncEngine>;
 }) {
   const { status, connected, syncNow } = engine;
+  const { adoptBoard } = useBoardContext();
   const [diag, setDiag] = useState<SyncDiag | null>(null);
+  const [history, setHistory] = useState<BoardRevision[] | null>(null);
+  const [historyNote, setHistoryNote] = useState<string | null>(null);
+  const loadHistory = async () => {
+    setHistoryNote(null);
+    if (!(await acquireToken(true))) {
+      setHistoryNote(y.statusError);
+      return;
+    }
+    try {
+      setHistory(await listBoardRevisions());
+    } catch {
+      setHistoryNote(y.statusError);
+    }
+  };
+  const restore = async (rev: BoardRevision) => {
+    if (!window.confirm(y.historyConfirm.replace('{time}', new Date(rev.modifiedTime).toLocaleString()))) return;
+    setHistoryNote(null);
+    try {
+      const b = await downloadBoardRevision(rev.id);
+      if (!b?.id || !Array.isArray(b.pages)) throw new Error('bad board');
+      await adoptBoard(b);
+      setHistoryNote(y.historyRestored);
+    } catch {
+      setHistoryNote(y.statusError);
+    }
+  };
   useEffect(() => {
     void kvGet<SyncDiag>('syncDiag').then((d) => setDiag(d ?? null));
   }, [status]);
@@ -243,6 +273,44 @@ export function SyncSection({
           </>
         )}
       </div>
+      {connected && (
+        <div className="mt-3 border-t border-text-muted/15 pt-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="rounded border border-text-muted/30 px-2.5 py-1 font-body text-xs text-text hover:border-primary"
+              onClick={() => void loadHistory()}
+            >
+              {y.historyLoad}
+            </button>
+            {historyNote && <span className="font-body text-xs text-text-muted">{historyNote}</span>}
+          </div>
+          {history && (
+            <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto">
+              {history.length === 0 && (
+                <li className="font-body text-xs text-text-muted">{y.historyEmpty}</li>
+              )}
+              {history.map((rev) => (
+                <li key={rev.id} className="flex items-center justify-between gap-2 font-body text-xs text-text">
+                  <span>
+                    {new Date(rev.modifiedTime).toLocaleString()}
+                    {rev.size !== null && (
+                      <span className="ml-2 text-text-muted">{Math.round(rev.size / 1024)} KB</span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded border border-text-muted/30 px-2 py-0.5 text-[11px] text-text-muted hover:text-text"
+                    onClick={() => void restore(rev)}
+                  >
+                    {y.historyRestore}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {diag && (
         <details className="mt-2">
           <summary className="cursor-pointer font-body text-[11px] text-text-muted">{y.details}</summary>

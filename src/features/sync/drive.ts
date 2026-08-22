@@ -284,6 +284,36 @@ async function remoteBoardStamp(folderId: string): Promise<string | null> {
   return files.find((f) => f.name === 'board.json')?.modifiedTime ?? null;
 }
 
+export type BoardRevision = { id: string; modifiedTime: string; size: number | null };
+
+/** board.json's version history on Drive (newest first). Drive keeps
+ * prior versions of app-written files for thirty days; this is the
+ * recovery path when a sync went the wrong way. */
+export async function listBoardRevisions(): Promise<BoardRevision[]> {
+  const folderId = await findOrCreateFolder();
+  const files = await listFolder(folderId);
+  const bf = files.find((f) => f.name === 'board.json');
+  if (!bf) return [];
+  const r = await api(
+    `/files/${bf.id}/revisions?fields=revisions(id,modifiedTime,size)&pageSize=200`,
+  );
+  if (!r.ok) throw new Error(`revisions ${r.status}`);
+  const j = (await r.json()) as { revisions?: { id: string; modifiedTime: string; size?: string }[] };
+  return (j.revisions ?? [])
+    .map((x) => ({ id: x.id, modifiedTime: x.modifiedTime, size: x.size ? Number(x.size) : null }))
+    .sort((a, b) => b.modifiedTime.localeCompare(a.modifiedTime));
+}
+
+export async function downloadBoardRevision(revisionId: string): Promise<Board> {
+  const folderId = await findOrCreateFolder();
+  const files = await listFolder(folderId);
+  const bf = files.find((f) => f.name === 'board.json');
+  if (!bf) throw new Error('no board on Drive');
+  const r = await api(`/files/${bf.id}/revisions/${revisionId}?alt=media`);
+  if (!r.ok) throw new Error(`revision download ${r.status}`);
+  return (await r.json()) as Board;
+}
+
 /** Called by the conflict resolver after adopting the remote board. */
 export async function markRemoteSeen(stamp: string | null): Promise<void> {
   await kvSet('lastRemoteStamp', stamp);
