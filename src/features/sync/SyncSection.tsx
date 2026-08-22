@@ -254,8 +254,7 @@ export function SyncSection({
               `local: rev ${diag.localRevision}, last synced rev ${diag.lastSyncedRevision}`,
               `last seen drive stamp: ${fmt(diag.lastRemoteStamp)}`,
               `last outcome: ${diag.outcome} @ ${fmt(diag.at)}`,
-            ].join('
-')}
+            ].join('\n')}
           </pre>
         </details>
       )}
