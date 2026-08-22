@@ -375,7 +375,8 @@
     "disconnect": "Disconnect",
     "reconnectHint": "Session paused. Tap Sync now to reconnect.",
     "journalFailed": "Journal sheet failed ({code}). Tap Sync now to retry.",
-    "pausedPill": "Sync paused. Tap to reconnect"
+    "pausedPill": "Sync paused. Tap to reconnect",
+    "details": "Sync details"
   },
   "meditation": {
     "libraryTitle": "Meditation library",

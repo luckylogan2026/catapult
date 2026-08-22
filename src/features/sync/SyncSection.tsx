@@ -3,7 +3,14 @@ import { strings } from '../../config';
 import type { Board, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { kvGet, kvSet } from '../../db/kv';
-import { acquireToken, clientIdConfigured, markRemoteSeen, syncOnce, type SyncOutcome } from './drive';
+import {
+  acquireToken,
+  clientIdConfigured,
+  markRemoteSeen,
+  syncOnce,
+  type SyncDiag,
+  type SyncOutcome,
+} from './drive';
 import { mergeCompletions, mergePendingRatings } from '../playback/streak';
 
 const y = strings.sync;
@@ -210,6 +217,11 @@ export function SyncSection({
   engine: ReturnType<typeof useSyncEngine>;
 }) {
   const { status, connected, syncNow } = engine;
+  const [diag, setDiag] = useState<SyncDiag | null>(null);
+  useEffect(() => {
+    void kvGet<SyncDiag>('syncDiag').then((d) => setDiag(d ?? null));
+  }, [status]);
+  const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '·');
   return (
     <div className="mt-4 rounded border border-text-muted/20 p-3">
       <p className="font-body text-sm font-medium text-text">{y.title}</p>
@@ -231,6 +243,22 @@ export function SyncSection({
           </>
         )}
       </div>
+      {diag && (
+        <details className="mt-2">
+          <summary className="cursor-pointer font-body text-[11px] text-text-muted">{y.details}</summary>
+          <pre className="mt-1 whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-text-muted">
+            {[
+              `account: ${diag.account ?? '·'}`,
+              `folder: ${diag.folderId ?? '·'}`,
+              `drive board: rev ${diag.remoteRevision ?? '·'} @ ${fmt(diag.remoteStamp)}`,
+              `local: rev ${diag.localRevision}, last synced rev ${diag.lastSyncedRevision}`,
+              `last seen drive stamp: ${fmt(diag.lastRemoteStamp)}`,
+              `last outcome: ${diag.outcome} @ ${fmt(diag.at)}`,
+            ].join('
+')}
+          </pre>
+        </details>
+      )}
     </div>
   );
 }

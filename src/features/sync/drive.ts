@@ -246,6 +246,35 @@ export type SyncOutcome =
     }
   | { kind: 'error'; message: string };
 
+/** What this device saw on its last sync, for the Settings readout.
+ * Comparing two devices' readouts side by side names any split
+ * (different accounts, different folders, stale pushes) directly. */
+export type SyncDiag = {
+  at: string;
+  account: string | null;
+  folderId: string | null;
+  remoteStamp: string | null;
+  remoteRevision: number | null;
+  localRevision: number;
+  lastSyncedRevision: number;
+  lastRemoteStamp: string | null;
+  outcome: string;
+};
+
+async function accountEmail(): Promise<string | null> {
+  const cached = await kvGet<string>('driveUser');
+  if (cached) return cached;
+  try {
+    const r = await api('/about?fields=user(emailAddress)');
+    if (!r.ok) return null;
+    const email = (await r.json()).user?.emailAddress as string | undefined;
+    if (email) await kvSet('driveUser', email);
+    return email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Drive's own identity for the current board.json: its modifiedTime.
  * "Has Drive changed since I last looked" must be judged by this and
  * never by revision numbers, which are per-device counters and not
@@ -282,6 +311,22 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     const localAhead = board.revision > lastSynced;
     const remoteChanged = !!remote && remoteStamp !== lastRemoteStamp;
 
+    const account = await accountEmail();
+    const diag = async (outcome: string) => {
+      const snapshot: SyncDiag = {
+        at: new Date().toISOString(),
+        account,
+        folderId,
+        remoteStamp,
+        remoteRevision: remote?.revision ?? null,
+        localRevision: board.revision,
+        lastSyncedRevision: lastSynced,
+        lastRemoteStamp,
+        outcome,
+      };
+      await kvSet('syncDiag', snapshot);
+    };
+
     const recordPush = async () => {
       await kvSet('lastSyncedRevision', board.revision);
       await kvSet('lastRemoteStamp', await remoteBoardStamp(folderId));
@@ -290,6 +335,7 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     if (forcePush) {
       const pushed = await pushBoard(board, folderId, files, boardFile?.id);
       await recordPush();
+      await diag('force-pushed');
       return { kind: 'pushed', assetsUploaded: pushed.uploaded, journalError: pushed.journalError ?? undefined };
     }
 
@@ -300,8 +346,10 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
       if (strip(remote) === strip(board)) {
         await kvSet('lastSyncedRevision', board.revision);
         await kvSet('lastRemoteStamp', remoteStamp);
+        await diag('identical');
         return { kind: 'idle' };
       }
+      await diag('conflict');
       return {
         kind: 'conflict',
         remoteBoard: remote,
@@ -314,6 +362,7 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     if (remote && remoteChanged && !localAhead) {
       const downloaded = await pullAssets(remote, files);
       await kvSet('lastRemoteStamp', remoteStamp);
+      await diag('pulled');
       return { kind: 'pulled', board: remote, assetsDownloaded: downloaded };
     }
 
@@ -321,6 +370,7 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
     if (localAhead || !remote) {
       const pushed = await pushBoard(board, folderId, files, boardFile?.id);
       await recordPush();
+      await diag('pushed');
       return { kind: 'pushed', assetsUploaded: pushed.uploaded, journalError: pushed.journalError ?? undefined };
     }
 
@@ -332,6 +382,7 @@ export async function syncOnce(board: Board, forcePush = false): Promise<SyncOut
       journalError = await syncJournalSheet(board, folderId, files);
     }
     const repaired = await repairAssets(board, folderId, files);
+    await diag('idle');
     if (repaired.uploaded) {
       return { kind: 'pushed', assetsUploaded: repaired.uploaded, journalError: journalError ?? undefined };
     }
