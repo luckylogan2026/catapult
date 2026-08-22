@@ -3,7 +3,7 @@ import { strings } from '../../config';
 import type { Board, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { kvGet, kvSet } from '../../db/kv';
-import { acquireToken, clientIdConfigured, syncOnce, type SyncOutcome } from './drive';
+import { acquireToken, clientIdConfigured, markRemoteSeen, syncOnce, type SyncOutcome } from './drive';
 import { mergeCompletions, mergePendingRatings } from '../playback/streak';
 
 const y = strings.sync;
@@ -15,7 +15,12 @@ const y = strings.sync;
 // because losing a morning's work to a silent overwrite would be worse
 // than any bug in this app.
 
-type ConflictState = { remoteBoard: Board; remoteEdited: string; localEdited: string };
+type ConflictState = {
+  remoteBoard: Board;
+  remoteStamp: string | null;
+  remoteEdited: string;
+  localEdited: string;
+};
 
 export function useSyncEngine() {
   const { board, mutate, adoptBoard } = useBoardContext();
@@ -131,6 +136,7 @@ export function useSyncEngine() {
           ),
         });
         await kvSet('lastSyncedRevision', stored.revision);
+        await markRemoteSeen(c.remoteStamp);
         setStatus(y.statusPulled);
         return;
       } else if (choice === 'both') {

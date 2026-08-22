@@ -237,60 +237,90 @@ export type SyncOutcome =
   | { kind: 'idle'; journalError?: string }
   | { kind: 'pushed'; assetsUploaded: number; journalError?: string }
   | { kind: 'pulled'; board: Board; assetsDownloaded: number }
-  | { kind: 'conflict'; remoteBoard: Board; remoteEdited: string; localEdited: string }
+  | {
+      kind: 'conflict';
+      remoteBoard: Board;
+      remoteStamp: string | null;
+      remoteEdited: string;
+      localEdited: string;
+    }
   | { kind: 'error'; message: string };
 
-// Pull then push. Compare the remote board's revision against the last
-// revision this device synced: remote ahead only means pull, local ahead
-// only means push, both ahead means the conflict dialog and never a
-// silent overwrite.
+/** Drive's own identity for the current board.json: its modifiedTime.
+ * "Has Drive changed since I last looked" must be judged by this and
+ * never by revision numbers, which are per-device counters and not
+ * comparable across devices. */
+async function remoteBoardStamp(folderId: string): Promise<string | null> {
+  const files = await listFolder(folderId);
+  return files.find((f) => f.name === 'board.json')?.modifiedTime ?? null;
+}
+
+/** Called by the conflict resolver after adopting the remote board. */
+export async function markRemoteSeen(stamp: string | null): Promise<void> {
+  await kvSet('lastRemoteStamp', stamp);
+}
+
+// Pull then push. Local "ahead" means this device edited since its last
+// sync (its own revision counter). Remote "changed" means board.json on
+// Drive is not the file this device last pushed or pulled (Drive's
+// modifiedTime). Both true means the conflict dialog, never a silent
+// overwrite.
 export async function syncOnce(board: Board, forcePush = false): Promise<SyncOutcome> {
   try {
     const folderId = await findOrCreateFolder();
     const files = await listFolder(folderId);
     const boardFile = files.find((f) => f.name === 'board.json');
     const lastSynced = (await kvGet<number>('lastSyncedRevision')) ?? -1;
+    const lastRemoteStamp = (await kvGet<string | null>('lastRemoteStamp')) ?? null;
 
     let remote: Board | null = null;
     if (boardFile) {
       remote = JSON.parse(await (await downloadFile(boardFile.id)).text()) as Board;
     }
+    const remoteStamp = boardFile?.modifiedTime ?? null;
 
     const localAhead = board.revision > lastSynced;
-    const remoteAhead = !!remote && remote.revision > lastSynced;
+    const remoteChanged = !!remote && remoteStamp !== lastRemoteStamp;
+
+    const recordPush = async () => {
+      await kvSet('lastSyncedRevision', board.revision);
+      await kvSet('lastRemoteStamp', await remoteBoardStamp(folderId));
+    };
 
     if (forcePush) {
       const pushed = await pushBoard(board, folderId, files, boardFile?.id);
-      await kvSet('lastSyncedRevision', board.revision);
+      await recordPush();
       return { kind: 'pushed', assetsUploaded: pushed.uploaded, journalError: pushed.journalError ?? undefined };
     }
 
-    if (remote && remoteAhead && localAhead && remote.revision !== board.revision) {
+    if (remote && remoteChanged && localAhead) {
       // Two histories that carry the same content have nothing to argue
       // about: record agreement and move on.
       const strip = (b: Board) => JSON.stringify({ ...b, revision: 0, meta: { ...b.meta, lastEdited: '' } });
       if (strip(remote) === strip(board)) {
-        await kvSet('lastSyncedRevision', Math.max(remote.revision, board.revision));
+        await kvSet('lastSyncedRevision', board.revision);
+        await kvSet('lastRemoteStamp', remoteStamp);
         return { kind: 'idle' };
       }
       return {
         kind: 'conflict',
         remoteBoard: remote,
+        remoteStamp,
         remoteEdited: remote.meta.lastEdited,
         localEdited: board.meta.lastEdited,
       };
     }
 
-    if (remote && remoteAhead && !localAhead) {
+    if (remote && remoteChanged && !localAhead) {
       const downloaded = await pullAssets(remote, files);
-      await kvSet('lastSyncedRevision', remote.revision);
+      await kvSet('lastRemoteStamp', remoteStamp);
       return { kind: 'pulled', board: remote, assetsDownloaded: downloaded };
     }
 
     // Push: local ahead, or nothing remote yet.
     if (localAhead || !remote) {
       const pushed = await pushBoard(board, folderId, files, boardFile?.id);
-      await kvSet('lastSyncedRevision', board.revision);
+      await recordPush();
       return { kind: 'pushed', assetsUploaded: pushed.uploaded, journalError: pushed.journalError ?? undefined };
     }
 
