@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { strings } from '../../config';
 import type { Board, LibraryRecording, MeditationConfig, MeditationSlot, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
@@ -440,7 +441,10 @@ function SlotSheet({
     </button>
   );
 
-  return (
+  // Portaled to the body: the deck's screens carry transforms, and a
+  // transformed ancestor turns position:fixed into "fixed inside that
+  // box", which floated this sheet up under the phone's status bar.
+  return createPortal(
     <div
       className="fixed inset-0 z-30 flex items-end justify-center bg-black/50"
       onClick={onClose}
@@ -448,7 +452,8 @@ function SlotSheet({
       onPointerUp={(ev) => ev.stopPropagation()}
     >
       <div
-        className="max-h-[70vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[#141414] p-3 pb-6"
+        className="w-full max-w-md overflow-y-auto rounded-t-2xl bg-[#141414] p-3 pb-6"
+        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 64px)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="relative mb-2">
@@ -474,6 +479,7 @@ function SlotSheet({
           </div>
         ))}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
