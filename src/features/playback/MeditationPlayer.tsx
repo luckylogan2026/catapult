@@ -446,7 +446,7 @@ function SlotSheet({
   // box", which floated this sheet up under the phone's status bar.
   return createPortal(
     <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-black/50"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50"
       onClick={onClose}
       onPointerDown={(ev) => ev.stopPropagation()}
       onPointerUp={(ev) => ev.stopPropagation()}
