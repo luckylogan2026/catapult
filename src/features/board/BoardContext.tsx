@@ -45,6 +45,43 @@ const BoardContext = createContext<BoardContextValue | null>(null);
 // baseRevision is the latest live revision, which an undo-restored
 // snapshot predates. The stamped revision must stay strictly monotonic
 // for Phase 6 sync, so take the max of both.
+// A browser can discard an IndexedDB it considers corrupted after an
+// unclean shutdown, taking the board with it. localStorage lives in a
+// separate storage subsystem and survives that, so a lean emergency
+// copy of the board (structure and text; media stays content-addressed
+// on Drive) is refreshed there at most once a minute. Startup falls
+// back to it when the database comes up empty, and the next sync
+// re-downloads any missing media.
+const EMERGENCY_KEY = 'emergencyBoard';
+let lastEmergencySave = 0;
+function saveEmergencyCopy(board: Board, force = false): void {
+  const now = Date.now();
+  if (!force && now - lastEmergencySave < 60000) return;
+  lastEmergencySave = now;
+  try {
+    localStorage.setItem(EMERGENCY_KEY, JSON.stringify(board));
+  } catch {
+    // Quota or privacy mode: the emergency net is best-effort only.
+  }
+}
+export function clearEmergencyCopy(): void {
+  try {
+    localStorage.removeItem(EMERGENCY_KEY);
+  } catch {
+    // ignore
+  }
+}
+function loadEmergencyCopy(): Board | null {
+  try {
+    const raw = localStorage.getItem(EMERGENCY_KEY);
+    if (!raw) return null;
+    const b = JSON.parse(raw) as Board;
+    return b?.id && Array.isArray(b.pages) ? b : null;
+  } catch {
+    return null;
+  }
+}
+
 function stamp(board: Board, baseRevision: number): Board {
   return {
     ...board,
@@ -86,7 +123,15 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       await requestPersistentStorage();
-      const loaded = await loadBoard();
+      let loaded = await loadBoard();
+      if (!loaded) {
+        const emergency = loadEmergencyCopy();
+        if (emergency) {
+          await persistBoard(emergency);
+          loaded = emergency;
+          console.warn('board restored from the emergency copy after an empty database');
+        }
+      }
       const existing = loaded ? ensureTemplateBlocks(loaded) : null;
       boardRef.current = existing;
       setBoard(existing);
@@ -98,6 +143,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     const stamped = stamp(next, boardRef.current?.revision ?? 0);
     boardRef.current = stamped;
     setBoard(stamped);
+    saveEmergencyCopy(stamped);
     setSaveState('saving');
     void persistBoard(stamped).then(() => {
       setSaveState('saved');
@@ -124,6 +170,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     async (b: Board) => {
       const stamped = stamp(reconcileOrders(b), boardRef.current?.revision ?? 0);
       boardRef.current = stamped;
+      saveEmergencyCopy(stamped, true);
       await persistBoard(stamped);
       setBoard(stamped);
       return stamped;

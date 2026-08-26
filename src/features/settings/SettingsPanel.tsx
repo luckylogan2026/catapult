@@ -229,6 +229,8 @@ export function SettingsPanel({
 
   const startOver = async () => {
     if (!window.confirm(s.startOverConfirm)) return;
+    const { clearEmergencyCopy } = await import('../board/BoardContext');
+    clearEmergencyCopy();
     await db.boards.clear();
     await db.assets.clear();
     window.location.reload();
