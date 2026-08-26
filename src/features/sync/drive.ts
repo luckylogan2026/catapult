@@ -314,6 +314,22 @@ export async function downloadBoardRevision(revisionId: string): Promise<Board> 
   return (await r.json()) as Board;
 }
 
+/** One-tap recovery for a fresh device: sign-in must already hold a
+ * token (call acquireToken(true) first). Downloads the board and its
+ * assets from Drive and records the sync markers so the next sync sees
+ * a level state. Returns null when Drive has no board. */
+export async function restoreFromDrive(): Promise<{ board: Board; assets: number } | null> {
+  const folderId = await findOrCreateFolder();
+  const files = await listFolder(folderId);
+  const bf = files.find((f) => f.name === 'board.json');
+  if (!bf) return null;
+  const board = JSON.parse(await (await downloadFile(bf.id)).text()) as Board;
+  if (!board?.id || !Array.isArray(board.pages)) return null;
+  const assets = await pullAssets(board, files);
+  await kvSet('lastRemoteStamp', bf.modifiedTime ?? null);
+  return { board, assets };
+}
+
 /** Called by the conflict resolver after adopting the remote board. */
 export async function markRemoteSeen(stamp: string | null): Promise<void> {
   await kvSet('lastRemoteStamp', stamp);

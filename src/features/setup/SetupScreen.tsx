@@ -37,6 +37,34 @@ export function SetupScreen() {
     }
   };
 
+  // The same board, from Drive instead of a file: the recovery path for
+  // a device whose local storage came up empty.
+  const restoreDrive = async () => {
+    if (busy) return;
+    setBusy(true);
+    setRestoreNotice(null);
+    try {
+      const { acquireToken, restoreFromDrive } = await import('../sync/drive');
+      if (!(await acquireToken(true))) {
+        setRestoreNotice(s.restoreDriveError);
+        return;
+      }
+      const result = await restoreFromDrive();
+      if (!result) {
+        setRestoreNotice(s.restoreDriveNone);
+        return;
+      }
+      const { kvSet } = await import('../../db/kv');
+      const stored = await adoptBoard(result.board);
+      await kvSet('lastSyncedRevision', stored.revision);
+      applyBoardTheme(stored.theme);
+    } catch {
+      setRestoreNotice(s.restoreDriveError);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const begin = async () => {
     if (busy) return;
     setBusy(true);
@@ -146,6 +174,14 @@ export function SetupScreen() {
           onClick={() => importRef.current?.click()}
         >
           {strings.settings.importBackup}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          className="mt-3 w-full rounded-md border border-text-muted/30 px-4 py-2.5 font-body text-sm text-text-muted hover:text-text disabled:opacity-60"
+          onClick={() => void restoreDrive()}
+        >
+          {s.restoreDrive}
         </button>
         {restoreNotice && <p className="mt-2 font-body text-xs text-secondary">{restoreNotice}</p>}
         <input
