@@ -216,21 +216,13 @@ export function MeditationPlayer({
                 </button>
                 {slot?.kind === 'silence' && (
                   <label className="flex shrink-0 items-center gap-1 font-body text-[11px] text-white/60">
-                    <input
-                      type="number"
-                      min={0.1}
-                      max={60}
-                      step={0.1}
+                    <SilenceMinutes
                       value={slot.minutes}
-                      onChange={(ev) => {
+                      onCommit={(minutes) => {
                         const slots = [...config.slots];
-                        slots[i] = {
-                          kind: 'silence',
-                          minutes: Math.max(0.1, Math.round(Number(ev.target.value) * 10) / 10 || 2),
-                        };
+                        slots[i] = { kind: 'silence', minutes };
                         save({ ...config, slots });
                       }}
-                      className="w-12 rounded border border-white/15 bg-black/40 px-1 py-0.5 text-white"
                     />
                     {m.minutesLabel}
                   </label>
@@ -410,6 +402,31 @@ export function MeditationPlayer({
 
 // The app's own picker: a bottom sheet with role sections, compact and
 // scrollable, replacing the native dropdown.
+// The minutes field must be fully editable: a controlled number input
+// that re-parses every keystroke snaps back the moment the field is
+// cleared, so the draft lives locally and only valid values commit.
+function SilenceMinutes({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="number"
+      min={0.1}
+      max={60}
+      step={0.1}
+      value={draft ?? String(value)}
+      onChange={(ev) => {
+        setDraft(ev.target.value);
+        const n = Number(ev.target.value);
+        if (ev.target.value !== '' && Number.isFinite(n) && n > 0) {
+          onCommit(Math.min(60, Math.round(n * 10) / 10));
+        }
+      }}
+      onBlur={() => setDraft(null)}
+      className="w-12 rounded border border-white/15 bg-black/40 px-1 py-0.5 text-white"
+    />
+  );
+}
+
 function SlotSheet({
   library,
   isMusic,
