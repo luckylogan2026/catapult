@@ -332,7 +332,8 @@
     "colorTextMuted": "Muted text",
     "resetColors": "Reset to preset",
     "fromImage": "From image",
-    "fromImageHint": "Pick a logo or brand image; the main colors become your palette."
+    "fromImageHint": "Pick a logo or brand image; the main colors become your palette.",
+    "boardsStored": "Boards in store: {n}"
   },
   "playback": {
     "preview": "Play",

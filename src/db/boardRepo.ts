@@ -10,7 +10,18 @@ import {
 
 export async function loadBoard(): Promise<Board | null> {
   const all = await db.boards.toArray();
-  return all[0] ?? null;
+  if (all.length <= 1) return all[0] ?? null;
+  // More than one record can exist after a recovery (a fresh board made
+  // on the setup screen plus the real board adopted from Drive). The
+  // most recently edited one is the live board; picking table order
+  // here made the app appear freshly wiped at random.
+  return [...all].sort((a, b) =>
+    (b.meta?.lastEdited ?? '').localeCompare(a.meta?.lastEdited ?? ''),
+  )[0];
+}
+
+export async function boardCount(): Promise<number> {
+  return db.boards.count();
 }
 
 // Writes the board as given. The caller stamps revision and lastEdited

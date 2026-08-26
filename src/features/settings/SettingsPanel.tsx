@@ -36,6 +36,7 @@ export function SettingsPanel({
 }) {
   const { board, mutate, adoptBoard } = useBoardContext();
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null);
+  const [boardsStored, setBoardsStored] = useState<number | null>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export function SettingsPanel({
   useEffect(() => {
     void storageEstimate().then(setUsage);
     void navigator.storage?.persisted?.().then(setPersisted);
+    void import('../../db/boardRepo').then((m) => m.boardCount().then(setBoardsStored));
   }, []);
 
   const saveBackup = async () => {
@@ -374,6 +376,11 @@ export function SettingsPanel({
           {usage && (
             <p>
               {s.storageUsage}: {fmtBytes(usage.usage)} / {fmtBytes(usage.quota)}
+            </p>
+          )}
+          {boardsStored !== null && (
+            <p className="mt-1 font-body text-xs text-text-muted">
+              {s.boardsStored.replace('{n}', String(boardsStored))}
             </p>
           )}
           {persisted !== null && (
