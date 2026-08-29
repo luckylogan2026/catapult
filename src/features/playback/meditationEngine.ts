@@ -17,10 +17,21 @@ export type EngineSegment =
 
 type LoadedSegment =
   | { kind: 'audio'; buffer: AudioBuffer; gain: number; label?: string }
+  | { kind: 'stream'; element: HTMLAudioElement; duration: number; label?: string }
   | { kind: 'silence'; seconds: number; label?: string };
 
 const TARGET_RMS = 0.08;
 const MAX_BOOST = 4; // +12 dB
+
+// Decoded audio is raw samples in RAM: a 45 minute recording decodes to
+// roughly half a gigabyte, which is enough to have Android kill the tab
+// mid-session, and a kill during a database write is how a browser ends
+// up discarding the whole database as corrupt. Long recordings stream
+// through a media element instead (like the music), and the total
+// decode budget is capped; only short segments get the loudness EQ that
+// decoding exists for.
+const STREAM_SEGMENT_SECONDS = 300;
+const DECODE_BUDGET_SECONDS = 600;
 
 function measureGain(buffer: AudioBuffer): number {
   let sum = 0;
@@ -38,7 +49,19 @@ function measureGain(buffer: AudioBuffer): number {
 }
 
 function segLength(seg: LoadedSegment): number {
-  return seg.kind === 'silence' ? seg.seconds : seg.buffer.duration;
+  if (seg.kind === 'silence') return seg.seconds;
+  if (seg.kind === 'stream') return seg.duration;
+  return seg.buffer.duration;
+}
+
+/** Duration from metadata alone, no decode, no meaningful memory. */
+function probeDuration(el: HTMLAudioElement): Promise<number> {
+  return new Promise((resolve) => {
+    const done = () => resolve(Number.isFinite(el.duration) ? el.duration : 0);
+    if (el.readyState >= 1) return done();
+    el.addEventListener('loadedmetadata', done, { once: true });
+    el.addEventListener('error', () => resolve(0), { once: true });
+  });
 }
 
 export class MeditationEngine {
@@ -50,6 +73,7 @@ export class MeditationEngine {
   private music: { volume: number; duck: boolean } | null = null;
   private musicElement: HTMLAudioElement | null = null;
   private voiceNodes: AudioBufferSourceNode[] = [];
+  private streamPlan: { element: HTMLAudioElement; startAt: number; into: number; end: number }[] = [];
   private ticker: number | undefined;
   private timeline: { start: number; end: number; voice: boolean; label?: string }[] = [];
   private startAtTime = 0;
@@ -84,13 +108,36 @@ export class MeditationEngine {
     };
 
     this.loaded = [];
+    let decodedSeconds = 0;
     for (const seg of segments) {
       if (seg.kind === 'silence') {
         this.loaded.push({ kind: 'silence', seconds: seg.seconds, label: seg.label });
-      } else {
+        continue;
+      }
+      const asset = await db.assets.get(seg.assetId);
+      if (this.ctx !== ctx) return;
+      if (!asset) continue;
+      const el = new Audio();
+      el.src = assetObjectUrl(asset.id, asset.blob);
+      el.preload = 'metadata';
+      el.style.display = 'none';
+      const duration = await probeDuration(el);
+      if (this.ctx !== ctx) return;
+      const mustStream =
+        duration > STREAM_SEGMENT_SECONDS || decodedSeconds + duration > DECODE_BUDGET_SECONDS;
+      if (!mustStream) {
         const buffer = await decode(seg.assetId);
-        if (buffer)
+        if (this.ctx !== ctx) return;
+        if (buffer) {
+          decodedSeconds += buffer.duration;
           this.loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label });
+          el.removeAttribute('src');
+          continue;
+        }
+      }
+      if (duration > 0) {
+        document.body.appendChild(el);
+        this.loaded.push({ kind: 'stream', element: el, duration, label: seg.label });
       }
     }
     if (this.ctx !== ctx) return;
@@ -194,6 +241,16 @@ export class MeditationEngine {
         this.lastVoiceState = voice;
         this.onVoiceActive?.(voice);
       }
+      for (const s of this.streamPlan) {
+        if (t >= s.startAt && t < s.end) {
+          if (s.element.paused) {
+            s.element.currentTime = s.into + (t - s.startAt);
+            void s.element.play().catch(() => {});
+          }
+        } else if (!s.element.paused) {
+          s.element.pause();
+        }
+      }
       if (this.music && this.musicElement) {
         const target = this.music.duck && voice ? this.music.volume * 0.3 : this.music.volume;
         const current = this.musicElement.volume;
@@ -226,6 +283,8 @@ export class MeditationEngine {
       }
     }
     this.voiceNodes = [];
+    for (const s of this.streamPlan) s.element.pause();
+    this.streamPlan = [];
     this.timeline = [];
 
     const startAt = ctx.currentTime + lead;
@@ -253,6 +312,12 @@ export class MeditationEngine {
       const remaining = len - into;
       if (seg.kind === 'silence') {
         this.timeline.push({ start: cursor, end: cursor + remaining, voice: false, label: seg.label });
+        cursor += remaining;
+      } else if (seg.kind === 'stream') {
+        // The ticker starts and stops the element on the shared clock;
+        // a quarter second of tolerance is nothing inside a meditation.
+        this.streamPlan.push({ element: seg.element, startAt: cursor, into, end: cursor + remaining });
+        this.timeline.push({ start: cursor, end: cursor + remaining, voice: true, label: seg.label });
         cursor += remaining;
       } else {
         const gainNode = ctx.createGain();
@@ -313,6 +378,7 @@ export class MeditationEngine {
 
   async pause(): Promise<void> {
     await this.ctx?.suspend();
+    for (const s of this.streamPlan) s.element.pause();
     this.musicElement?.pause();
     this.element?.pause();
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
@@ -337,6 +403,11 @@ export class MeditationEngine {
       }
     }
     this.voiceNodes = [];
+    for (const s of this.streamPlan) {
+      s.element.pause();
+      s.element.remove();
+    }
+    this.streamPlan = [];
     this.musicElement?.pause();
     this.musicElement?.remove();
     this.musicElement = null;
