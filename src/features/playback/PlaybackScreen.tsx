@@ -104,6 +104,21 @@ export function PlaybackScreen({
     },
     [setDucked],
   );
+  // Browser vertical gestures must not run the session: a downward
+  // drag at the top would otherwise trigger pull-to-refresh, reload
+  // the page, and dump the user back into the editor mid-session.
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevRoot = root.style.overscrollBehaviorY;
+    const prevBody = document.body.style.overscrollBehaviorY;
+    root.style.overscrollBehaviorY = 'none';
+    document.body.style.overscrollBehaviorY = 'none';
+    return () => {
+      root.style.overscrollBehaviorY = prevRoot;
+      document.body.style.overscrollBehaviorY = prevBody;
+    };
+  }, []);
+
   // Keep the screen on for the whole run: a session is read, not
   // tapped, and the phone's idle timeout would otherwise darken the
   // affirmations mid-roll. Re-acquired when the tab comes back, and
@@ -351,7 +366,7 @@ export function PlaybackScreen({
     <div
       ref={containerRef}
       className="fixed inset-0 z-50 select-none overflow-hidden bg-background"
-      style={{ touchAction: 'pan-y' }}
+      style={{ touchAction: isRoll ? 'none' : 'pan-y' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

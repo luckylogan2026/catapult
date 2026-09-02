@@ -53,9 +53,13 @@ export function Teleprompter({
       el.style.transform = `translateY(${window.innerHeight * 0.5 - offset}px)`;
     };
     apply();
+    let lastScrub = 0;
     if (scrubRef && activeRef.current) {
       scrubRef.current = (dy) => {
-        // Finger up advances the roll, like scrolling a page.
+        // Finger up advances the roll, like scrolling a page. While a
+        // finger is on the text (and for a beat after) the auto-roll
+        // holds, so the text never creeps under the drag.
+        lastScrub = performance.now();
         offset = Math.max(0, Math.min(distance(), offset - dy));
         apply();
       };
@@ -65,7 +69,7 @@ export function Teleprompter({
     const tick = (t: number) => {
       const dt = Math.min(0.25, (t - last) / 1000);
       last = t;
-      if (activeRef.current && !pausedRef.current) {
+      if (activeRef.current && !pausedRef.current && t - lastScrub > 600) {
         offset += PX_PER_SEC[speed] * dt;
         if (offset >= distance()) {
           offset = 0;
