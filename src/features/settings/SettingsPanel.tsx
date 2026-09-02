@@ -1,3 +1,4 @@
+import { NumberField } from '../../components/NumberField';
 import { useEffect, useRef, useState } from 'react';
 import { strings, trackerItems } from '../../config';
 import { db } from '../../db/db';
@@ -485,18 +486,15 @@ export function SettingsPanel({
               {pl.autoAdvance && (
                 <label className="flex items-center gap-1 text-xs text-text-muted">
                   {s.dwellLabel}
-                  <input
-                    type="number"
+                  <NumberField
                     min={2}
                     max={120}
                     value={pl.dwellSeconds}
-                    onChange={(ev) =>
+                    onCommit={(n) =>
                       mutate((b) => ({
                         ...b,
                         playlists: b.playlists.map((x) =>
-                          x.id === pl.id
-                            ? { ...x, dwellSeconds: Math.max(2, Number(ev.target.value) || 6) }
-                            : x,
+                          x.id === pl.id ? { ...x, dwellSeconds: n } : x,
                         ),
                       }))
                     }
@@ -523,18 +521,15 @@ export function SettingsPanel({
               {pl.affirmationMode === 'shuffle' && (
                 <label className="flex items-center gap-1 text-xs text-text-muted">
                   {s.affirmationCountLabel}
-                  <input
-                    type="number"
+                  <NumberField
                     min={1}
                     max={200}
                     value={pl.shuffleCount}
-                    onChange={(ev) =>
+                    onCommit={(n) =>
                       mutate((b) => ({
                         ...b,
                         playlists: b.playlists.map((x) =>
-                          x.id === pl.id
-                            ? { ...x, shuffleCount: Math.max(1, Number(ev.target.value) || 1) }
-                            : x,
+                          x.id === pl.id ? { ...x, shuffleCount: n } : x,
                         ),
                       }))
                     }

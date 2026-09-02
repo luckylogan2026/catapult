@@ -1,3 +1,4 @@
+import { NumberField } from '../../components/NumberField';
 import { brand, strings } from '../../config';
 import type { Block, Board, ChapterStatus, Page } from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
@@ -25,12 +26,11 @@ export function BlockInspector({ page, block }: { board: Board; page: Page; bloc
         <>
           <label className="flex items-center gap-1 font-body text-xs text-text-muted">
             Aa
-            <input
-              type="number"
+            <NumberField
               min={16}
               max={200}
               value={block.style?.fontSize ?? 34}
-              onChange={(ev) => patch({ style: { ...block.style, fontSize: Number(ev.target.value) } })}
+              onCommit={(n) => patch({ style: { ...block.style, fontSize: n } })}
               className="w-16 rounded border border-text-muted/30 bg-background px-1 py-0.5 text-text"
             />
           </label>
