@@ -26,7 +26,19 @@ function rowsFor(cells: Block[]): Block[][] {
 }
 
 export function VisionFillView({ page, cells }: { page: Page; cells: Block[] }) {
-  const title = page.blocks.find((b) => b.slotId === 'title')?.text?.trim();
+  const titleBlock = page.blocks.find((b) => b.slotId === 'title');
+  const title = titleBlock?.text?.trim();
+  // Canvas font sizes are in 1275-wide canvas units; scale them to the
+  // viewport so the configured size actually shows on a phone, with the
+  // old clamp as the fallback when no size was set.
+  const ts = titleBlock?.style;
+  const titleStyle: React.CSSProperties = {
+    textShadow: '0 2px 14px rgba(0,0,0,0.75)',
+    fontSize: ts?.fontSize ? `calc(${ts.fontSize} * 100vw / 1275)` : undefined,
+    color: ts?.color,
+    fontWeight: ts?.weight,
+    fontStyle: ts?.italic ? 'italic' : undefined,
+  };
   return (
     <div className="relative h-full w-full bg-black">
       <div className="flex h-full w-full flex-col gap-0.5">
@@ -47,7 +59,7 @@ export function VisionFillView({ page, cells }: { page: Page; cells: Block[] }) 
       {title && (
         <p
           className="pointer-events-none absolute inset-x-0 top-8 text-center font-heading text-[clamp(22px,5vw,36px)] font-semibold text-white"
-          style={{ textShadow: '0 2px 14px rgba(0,0,0,0.75)' }}
+          style={titleStyle}
         >
           {title}
         </p>

@@ -10,6 +10,8 @@ import { useScreenAudio } from './useScreenAudio';
 import { CompletionScreen } from './CompletionScreen';
 import { PostShiftScreen, needsPostShift } from '../tracker/PostShiftScreen';
 import { useSessionAudio } from './useSessionAudio';
+import { localDate } from './streak';
+import type { RollScrub } from './Teleprompter';
 
 const p = strings.playback;
 
@@ -48,7 +50,9 @@ export function PlaybackScreen({
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ startX: number; startY: number; lastX: number; lastT: number; active: boolean; horizontal?: boolean } | null>(null);
+  const drag = useRef<{ startX: number; startY: number; lastX: number; lastY?: number; lastT: number; active: boolean; horizontal?: boolean } | null>(null);
+  // Vertical drags on a rolling screen scrub the teleprompter directly.
+  const rollScrub = useRef<RollScrub | null>(null);
 
   const playlist = board?.playlists.find((pl) => pl.id === playlistId);
 
@@ -115,6 +119,9 @@ export function PlaybackScreen({
       if (!alive || document.visibilityState !== 'visible') return;
       try {
         lock = await nav.wakeLock!.request('screen');
+        (lock as unknown as EventTarget).addEventListener?.('release', () => {
+          if (alive && document.visibilityState === 'visible') void acquire();
+        });
       } catch {
         // Denied or unsupported in this context: the run still plays.
       }
@@ -165,6 +172,15 @@ export function PlaybackScreen({
     if (completed) {
       stop();
       fadeOut();
+      // A repeat run of an already-saved session has nothing left to
+      // record: skip the end page and return to the editor.
+      const done = board?.streak.completions.some(
+        (c) => c.date === localDate() && c.playlistId === playlistId,
+      );
+      if (done) {
+        onExit();
+        return;
+      }
       setPostShiftOpen(board ? needsPostShift(board, playlistId) : false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -251,9 +267,20 @@ export function PlaybackScreen({
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       d.horizontal = Math.abs(dx) > Math.abs(dy);
       if (!d.horizontal) {
+        // On a rolling screen the vertical drag drives the roll; on
+        // everything else it is left to the page (native scroll).
+        if (isRoll && rollScrub.current) {
+          d.lastY = ev.clientY;
+          return;
+        }
         d.active = false;
         return;
       }
+    }
+    if (d.horizontal === false) {
+      rollScrub.current?.(ev.clientY - (d.lastY ?? ev.clientY));
+      d.lastY = ev.clientY;
+      return;
     }
     d.lastX = ev.clientX;
     d.lastT = performance.now();
@@ -356,6 +383,7 @@ export function PlaybackScreen({
               active={i === index}
               paused={paused}
               onRollEnd={i === index && autoAdvance && !paused ? () => advance() : undefined}
+              rollScrub={i === index ? rollScrub : undefined}
               onVoiceActive={onForeground}
             />
           </div>

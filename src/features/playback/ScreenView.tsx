@@ -15,7 +15,7 @@ import type { Screen } from './screens';
 import { PageView } from '../authoring/PageView';
 import { MediaContent } from '../authoring/MediaContent';
 import { TextFlowView, TextFlowContent } from './TextFlowView';
-import { Teleprompter } from './Teleprompter';
+import { Teleprompter, type RollScrub } from './Teleprompter';
 import { VisionFillView } from './VisionFillView';
 import { getPageTypeDef, getTemplate } from '../../pageTypes/registry';
 import { appearanceVars } from '../../theme/pageAppearance';
@@ -93,6 +93,7 @@ export function ScreenView({
   active = true,
   paused = false,
   onRollEnd,
+  rollScrub,
   onVoiceActive,
 }: {
   board: Board;
@@ -100,6 +101,7 @@ export function ScreenView({
   active?: boolean;
   paused?: boolean;
   onRollEnd?: () => void;
+  rollScrub?: import('react').MutableRefObject<RollScrub | null>;
   onVoiceActive?: (a: boolean) => void;
 }) {
   const portrait = useIsPortrait();
@@ -120,7 +122,7 @@ export function ScreenView({
                 }
               />
             )}
-            <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd}>
+            <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd} scrubRef={rollScrub}>
               <TextFlowContent page={screen.page} />
             </Teleprompter>
           </div>
@@ -244,7 +246,7 @@ export function ScreenView({
         <Backdrop screen={screen} />
         {introBg && <FullBleedMedia block={introBg} />}
         {introBg && <div className="absolute inset-0 bg-black/40" />}
-        <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd}>
+        <Teleprompter speed={screen.page.rollSpeed} active={active} paused={paused} onEnd={onRollEnd} scrubRef={rollScrub}>
           <div className="flex flex-col items-center gap-14">
           {screen.list.map((a) => (
             <div key={a.id} className="flex flex-col items-center gap-2">
