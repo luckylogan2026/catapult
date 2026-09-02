@@ -25,6 +25,7 @@ import { importFiles as importFilesRaw } from '../../assetPipeline/importAssets'
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { RecordButton } from './RecordButton';
 import { useSyncEngine, ConflictDialog } from '../sync/SyncSection';
+import { clientIdConfigured } from '../sync/drive';
 import { MeditationLibraryPanel } from './MeditationLibraryPanel';
 import { PlaybackScreen } from '../playback/PlaybackScreen';
 import { pageIsLight, themeIsLightNow } from '../../theme/pageAppearance';
@@ -66,6 +67,22 @@ function EditorInner() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const { busyLabel, notice, clearNotice, importClipboardTo, importFilesTo } = useImport();
   const syncEngine = useSyncEngine();
+  // The open-time connect prompt: a wiped device only hurts when the
+  // last days were never synced, so an unconnected open asks up front.
+  // Browsers only allow the Google window from a tap, hence a prompt
+  // with a button rather than an automatic sign-in.
+  const [connectPrompt, setConnectPrompt] = useState(false);
+  const connectChecked = useRef(false);
+  useEffect(() => {
+    if (connectChecked.current) return;
+    const t = window.setTimeout(() => {
+      connectChecked.current = true;
+      if (clientIdConfigured() && (!syncEngine.connected || syncEngine.paused)) {
+        setConnectPrompt(true);
+      }
+    }, 2500);
+    return () => window.clearTimeout(t);
+  }, [syncEngine.connected, syncEngine.paused]);
 
   const page = board?.pages.find((p) => p.id === selectedPageId) ?? board?.pages[0] ?? null;
   const pageId = page?.id ?? null;
@@ -505,6 +522,34 @@ function EditorInner() {
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} syncEngine={syncEngine} />}
 
       {progressOpen && <ProgressView onClose={() => setProgressOpen(false)} />}
+
+      {connectPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
+          <div className="w-full max-w-md rounded-lg bg-surface p-5">
+            <h2 className="font-heading text-xl text-text">{strings.sync.connectPromptTitle}</h2>
+            <p className="mt-2 font-body text-sm text-text-muted">{strings.sync.connectPromptBody}</p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                className="rounded bg-primary px-4 py-2.5 font-body text-sm font-medium text-background"
+                onClick={() => {
+                  setConnectPrompt(false);
+                  void syncEngine.syncNow();
+                }}
+              >
+                {strings.sync.connectPromptConnect}
+              </button>
+              <button
+                type="button"
+                className="rounded px-4 py-2 font-body text-sm text-text-muted hover:text-text"
+                onClick={() => setConnectPrompt(false)}
+              >
+                {strings.sync.connectPromptLater}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sessionSaved && (
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-text-muted/25 bg-surface px-5 py-2 font-body text-sm text-text shadow-lg">
