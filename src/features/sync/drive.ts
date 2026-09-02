@@ -318,14 +318,18 @@ export async function downloadBoardRevision(revisionId: string): Promise<Board> 
  * token (call acquireToken(true) first). Downloads the board and its
  * assets from Drive and records the sync markers so the next sync sees
  * a level state. Returns null when Drive has no board. */
-export async function restoreFromDrive(): Promise<{ board: Board; assets: number } | null> {
+export async function restoreFromDrive(
+  onProgress?: (stage: 'board' | 'assets', done: number, total: number) => void,
+): Promise<{ board: Board; assets: number } | null> {
+  onProgress?.('board', 0, 1);
   const folderId = await findOrCreateFolder();
   const files = await listFolder(folderId);
   const bf = files.find((f) => f.name === 'board.json');
   if (!bf) return null;
   const board = JSON.parse(await (await downloadFile(bf.id)).text()) as Board;
   if (!board?.id || !Array.isArray(board.pages)) return null;
-  const assets = await pullAssets(board, files);
+  onProgress?.('board', 1, 1);
+  const assets = await pullAssets(board, files, (done, total) => onProgress?.('assets', done, total));
   await kvSet('lastRemoteStamp', bf.modifiedTime ?? null);
   return { board, assets };
 }
@@ -655,17 +659,26 @@ async function pushBoard(
   return { uploaded, journalError };
 }
 
-async function pullAssets(remote: Board, files: RemoteFile[]): Promise<number> {
+async function pullAssets(
+  remote: Board,
+  files: RemoteFile[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<number> {
   const byName = new Map(files.map((f) => [f.name, f]));
-  let downloaded = 0;
+  const wanted: string[] = [];
   for (const id of referencedAssetIds(remote)) {
     if (await db.assets.get(id)) continue;
-    const file = byName.get(id);
-    if (!file) continue;
+    if (byName.has(id)) wanted.push(id);
+  }
+  let downloaded = 0;
+  onProgress?.(0, wanted.length);
+  for (const id of wanted) {
+    const file = byName.get(id)!;
     const blob = await downloadFile(file.id);
     const { storeBundleAsset } = await import('../exports/visionBundle');
     await storeBundleAsset(id, blob);
     downloaded++;
+    onProgress?.(downloaded, wanted.length);
   }
   return downloaded;
 }

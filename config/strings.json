@@ -37,7 +37,10 @@
     "begin": "Begin",
     "restoreDrive": "Restore from Google Drive",
     "restoreDriveNone": "No board found on Drive for this Google account.",
-    "restoreDriveError": "Could not restore from Drive. Check the connection and try again."
+    "restoreDriveError": "Could not restore from Drive. Check the connection and try again.",
+    "restoreDriveSignIn": "Waiting for Google sign in...",
+    "restoreDriveBoard": "Fetching your board...",
+    "restoreDriveAssets": "Downloading media {done} of {total}..."
   },
   "editor": {
     "addPage": "Add page",

@@ -45,11 +45,18 @@ export function SetupScreen() {
     setRestoreNotice(null);
     try {
       const { acquireToken, restoreFromDrive } = await import('../sync/drive');
+      setRestoreNotice(s.restoreDriveSignIn);
       if (!(await acquireToken(true))) {
         setRestoreNotice(s.restoreDriveError);
         return;
       }
-      const result = await restoreFromDrive();
+      const result = await restoreFromDrive((stage, done, total) => {
+        setRestoreNotice(
+          stage === 'board'
+            ? s.restoreDriveBoard
+            : s.restoreDriveAssets.replace('{done}', String(done)).replace('{total}', String(total)),
+        );
+      });
       if (!result) {
         setRestoreNotice(s.restoreDriveNone);
         return;
