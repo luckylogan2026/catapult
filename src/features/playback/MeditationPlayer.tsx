@@ -8,10 +8,11 @@ import { MeditationEngine, type EngineSegment } from './meditationEngine';
 const m = strings.meditation;
 const MAX_SLOTS = 5;
 
-const ROLE_ORDER = ['opening', 'body', 'closing', 'full', 'music'] as const;
+const ROLE_ORDER = ['opening', 'body', 'affirmations', 'closing', 'full', 'music'] as const;
 const ROLE_LABELS: Record<string, string> = {
   opening: m.roleOpening,
   body: m.roleBody,
+  affirmations: m.roleAffirmations,
   closing: m.roleClosing,
   full: m.roleFull,
   music: m.roleMusic,

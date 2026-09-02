@@ -165,7 +165,7 @@ export type LibraryRecording = {
   name: string;
   assetId: string;
   /** What this recording is, for grouped menus in the player. */
-  role?: 'opening' | 'body' | 'closing' | 'full' | 'music' | 'other';
+  role?: 'opening' | 'body' | 'affirmations' | 'closing' | 'full' | 'music' | 'other';
   /** A short line shown next to the name in the player menus. */
   description?: string;
 };

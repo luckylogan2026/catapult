@@ -414,7 +414,8 @@
     "pause": "Pause",
     "resume": "Resume",
     "restart": "Restart",
-    "audioMissing": "Audio not on this device yet. Sync now fetches it."
+    "audioMissing": "Audio not on this device yet. Sync now fetches it.",
+    "roleAffirmations": "Affirmations"
   },
   "tracker": {
     "positionOf": "{n} of {total}",

@@ -12,6 +12,7 @@ type Role = NonNullable<LibraryRecording['role']>;
 const ROLES: { value: Role; label: string }[] = [
   { value: 'opening', label: m.roleOpening },
   { value: 'body', label: m.roleBody },
+  { value: 'affirmations', label: m.roleAffirmations },
   { value: 'closing', label: m.roleClosing },
   { value: 'full', label: m.roleFull },
   { value: 'music', label: m.roleMusic },
@@ -22,6 +23,7 @@ function guessRole(name: string): Role {
   if (n.includes('open') || n.includes('intro')) return 'opening';
   if (n.includes('clos') || n.includes('end') || n.includes('outro')) return 'closing';
   if (n.includes('music') || n.includes('track') || n.includes('ambient')) return 'music';
+  if (n.includes('affirm')) return 'affirmations';
   if (n.includes('body') || n.includes('main')) return 'body';
   if (n.includes('full')) return 'full';
   return 'full';
