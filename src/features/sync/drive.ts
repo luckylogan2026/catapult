@@ -55,6 +55,7 @@ declare global {
             client_id: string;
             scope: string;
             callback: TokenClient['callback'];
+            error_callback?: (err: { type?: string }) => void;
           }) => TokenClient;
         };
       };
@@ -91,9 +92,20 @@ export async function acquireToken(interactive: boolean): Promise<boolean> {
     return false;
   }
   return new Promise((resolve) => {
+    // A blocked or closed popup must not leave the caller waiting
+    // forever: GIS reports it through error_callback, and a timeout
+    // covers the cases where nothing is reported at all.
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(ok);
+    };
+    window.setTimeout(() => finish(false), 120000);
     const client = window.google!.accounts.oauth2.initTokenClient({
       client_id: syncConfig.googleClientId,
       scope: SCOPE,
+      error_callback: () => finish(false),
       callback: (resp) => {
         if (resp.access_token) {
           accessToken = resp.access_token;
@@ -103,9 +115,9 @@ export async function acquireToken(interactive: boolean): Promise<boolean> {
           void kvSet('driveToken', { token: resp.access_token, expiresAt: Date.now() + expiresInMs });
           void kvSet('driveUser', null);
           void kvSet('driveFolderId', null);
-          resolve(true);
+          finish(true);
         } else {
-          resolve(false);
+          finish(false);
         }
       },
     });
