@@ -334,6 +334,14 @@ export async function restoreFromDrive(
   return { board, assets };
 }
 
+/** Whether this account's Drive already holds a board, for the
+ * first-run walkthrough to offer a restore instead of a fresh start. */
+export async function driveHasBoard(): Promise<boolean> {
+  const folderId = await findOrCreateFolder();
+  const files = await listFolder(folderId);
+  return files.some((f) => f.name === 'board.json');
+}
+
 /** Called by the conflict resolver after adopting the remote board. */
 export async function markRemoteSeen(stamp: string | null): Promise<void> {
   await kvSet('lastRemoteStamp', stamp);
