@@ -48,6 +48,7 @@ export function SetupScreen() {
   const [copied, setCopied] = useState(false);
   const [connected, setConnected] = useState(false);
   const [foundOnDrive, setFoundOnDrive] = useState(false);
+  const [account, setAccount] = useState<string | null>(null);
   const [connectNotice, setConnectNotice] = useState<string | null>(null);
 
   const [name, setName] = useState('');
@@ -83,12 +84,14 @@ export function SetupScreen() {
     setBusy(true);
     setConnectNotice(null);
     try {
-      const { acquireToken, driveHasBoard } = await import('../sync/drive');
+      const { acquireToken, driveHasBoard, accountEmail } = await import('../sync/drive');
       if (!(await acquireToken(true))) {
         setConnectNotice(s.connectError);
         return;
       }
       setConnected(true);
+      const email = await accountEmail();
+      setAccount(email);
       let has = false;
       try {
         has = await driveHasBoard();
@@ -96,7 +99,10 @@ export function SetupScreen() {
         has = false;
       }
       setFoundOnDrive(has);
-      if (!has) setStep(3);
+      if (!has) {
+        setRestoreNotice(s.connectedAs.replace('{account}', email ?? '?'));
+        setStep(3);
+      }
     } finally {
       setBusy(false);
     }
@@ -142,7 +148,9 @@ export function SetupScreen() {
         );
       });
       if (!result) {
-        setRestoreNotice(s.restoreDriveNone);
+        const { accountEmail } = await import('../sync/drive');
+        const email = await accountEmail();
+        setRestoreNotice(s.restoreDriveNoneFor.replace('{account}', email ?? '?'));
         return;
       }
       const { kvSet } = await import('../../db/kv');
@@ -263,6 +271,11 @@ export function SetupScreen() {
               <>
                 <p className="mt-4 font-body font-medium text-text">{s.foundTitle}</p>
                 <p className="mt-2 font-body text-text-muted">{app(s.foundBody)}</p>
+                {account && (
+                  <p className="mt-2 font-body text-xs text-text-muted">
+                    {s.connectedAs.replace('{account}', account)}
+                  </p>
+                )}
                 {restoreNotice && (
                   <p className="mt-3 font-body text-sm text-secondary">{restoreNotice}</p>
                 )}

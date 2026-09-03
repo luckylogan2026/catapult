@@ -65,7 +65,9 @@
     "foundFresh": "Start fresh instead",
     "boardTitle": "Set up your board",
     "back": "Back",
-    "continue": "Continue"
+    "continue": "Continue",
+    "connectedAs": "Connected as {account}.",
+    "restoreDriveNoneFor": "No board found on Drive for {account}. If your board is under another Google account, connect again and pick that account."
   },
   "editor": {
     "addPage": "Add page",

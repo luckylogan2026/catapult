@@ -101,13 +101,17 @@ export async function acquireToken(interactive: boolean): Promise<boolean> {
           tokenExpiry = performance.now() + expiresInMs;
           void kvSet('driveConnected', true);
           void kvSet('driveToken', { token: resp.access_token, expiresAt: Date.now() + expiresInMs });
+          void kvSet('driveUser', null);
+          void kvSet('driveFolderId', null);
           resolve(true);
         } else {
           resolve(false);
         }
       },
     });
-    client.requestAccessToken();
+    // Always show the account list: a silent auto-pick of the wrong
+    // Google account sends the user to an empty Drive with no clue why.
+    client.requestAccessToken({ prompt: 'select_account' });
   });
 }
 
@@ -261,7 +265,7 @@ export type SyncDiag = {
   outcome: string;
 };
 
-async function accountEmail(): Promise<string | null> {
+export async function accountEmail(): Promise<string | null> {
   const cached = await kvGet<string>('driveUser');
   if (cached) return cached;
   try {
