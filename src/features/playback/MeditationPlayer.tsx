@@ -57,6 +57,7 @@ export function MeditationPlayer({
   const [progress, setProgress] = useState<{ elapsed: number; total: number; label?: string } | null>(null);
   const [picker, setPicker] = useState<number | 'music' | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
+  const [missing, setMissing] = useState<string[]>([]);
   const autoStarted = useRef(false);
 
   const library = useMemo(() => board?.meditationLibrary ?? [], [board?.meditationLibrary]);
@@ -119,7 +120,11 @@ export function MeditationPlayer({
     const engine = new MeditationEngine();
     engineRef.current?.stop();
     engineRef.current = engine;
+    setMissing([]);
     engine.onVoiceActive = (a) => onVoiceActive?.(a);
+    engine.onMissingAudio = (label) => {
+      setMissing((cur) => (label && !cur.includes(label) ? [...cur, label] : cur));
+    };
     engine.onEnded = () => {
       setPlaying(false);
       setPausedUi(false);
@@ -139,7 +144,7 @@ export function MeditationPlayer({
       : null;
     setLoading(true);
     try {
-      await engine.play(
+      const ok = await engine.play(
         segments,
         musicChoice
           ? {
@@ -150,8 +155,14 @@ export function MeditationPlayer({
           : null,
         { title: page.title, artist: board.meta.title },
       );
-      setPlaying(true);
-      setPausedUi(false);
+      // A load that got superseded (a slot changed, the page was left,
+      // Stop was tapped) mid-flight reports false: showing the play
+      // controls for a session that silently never started would be
+      // worse than showing nothing.
+      if (ok && engineRef.current === engine) {
+        setPlaying(true);
+        setPausedUi(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -276,6 +287,12 @@ export function MeditationPlayer({
                 {m.musicDuckLabel}
               </label>
             </div>
+          )}
+
+          {missing.length > 0 && (
+            <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 font-body text-[11px] text-amber-200">
+              {m.missingAudio.replace('{items}', missing.join(', '))}
+            </p>
           )}
 
           {playing && progress && (

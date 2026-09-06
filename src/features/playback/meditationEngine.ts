@@ -1,5 +1,6 @@
 import { db } from '../../db/db';
 import { assetObjectUrl } from '../../assetPipeline/importAssets';
+import { fetchMissingAsset } from '../sync/drive';
 
 // The gapless meditation engine. Segments decode into one AudioContext
 // and are scheduled sample-accurately, silences being scheduled gaps.
@@ -83,12 +84,16 @@ export class MeditationEngine {
 
   onEnded: (() => void) | null = null;
   onVoiceActive: ((active: boolean) => void) | null = null;
+  /** A scheduled recording could not be found even after an attempted
+   * repair from Drive: the session plays on without it rather than
+   * failing outright, but the caller should tell the user. */
+  onMissingAudio: ((label?: string) => void) | null = null;
 
   async play(
     segments: EngineSegment[],
     music: { assetId: string; volume: number; duck: boolean } | null,
     meta: { title: string; artist: string },
-  ): Promise<void> {
+  ): Promise<boolean> {
     this.stop();
     const ctx = new AudioContext();
     this.ctx = ctx;
@@ -106,6 +111,8 @@ export class MeditationEngine {
         return null;
       }
     };
+    // Called once the asset is confirmed present (repaired if needed)
+    // by the loop above, so this never re-triggers the repair itself.
 
     this.loaded = [];
     let decodedSeconds = 0;
@@ -114,20 +121,32 @@ export class MeditationEngine {
         this.loaded.push({ kind: 'silence', seconds: seg.seconds, label: seg.label });
         continue;
       }
-      const asset = await db.assets.get(seg.assetId);
-      if (this.ctx !== ctx) return;
-      if (!asset) continue;
+      let asset = await db.assets.get(seg.assetId);
+      if (this.ctx !== ctx) return false;
+      if (!asset) {
+        // The blob never made it to this device (a sync that dropped a
+        // large file, most often). One quiet repair attempt before the
+        // segment is treated as truly gone.
+        if (await fetchMissingAsset(seg.assetId)) {
+          if (this.ctx !== ctx) return false;
+          asset = await db.assets.get(seg.assetId);
+        }
+      }
+      if (!asset) {
+        this.onMissingAudio?.(seg.label);
+        continue;
+      }
       const el = new Audio();
       el.src = assetObjectUrl(asset.id, asset.blob);
       el.preload = 'metadata';
       el.style.display = 'none';
       const duration = await probeDuration(el);
-      if (this.ctx !== ctx) return;
+      if (this.ctx !== ctx) return false;
       const mustStream =
         duration > STREAM_SEGMENT_SECONDS || decodedSeconds + duration > DECODE_BUDGET_SECONDS;
       if (!mustStream) {
         const buffer = await decode(seg.assetId);
-        if (this.ctx !== ctx) return;
+        if (this.ctx !== ctx) return false;
         if (buffer) {
           decodedSeconds += buffer.duration;
           this.loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label });
@@ -140,7 +159,7 @@ export class MeditationEngine {
         this.loaded.push({ kind: 'stream', element: el, duration, label: seg.label });
       }
     }
-    if (this.ctx !== ctx) return;
+    if (this.ctx !== ctx) return false;
     this.contentTotal = this.loaded.reduce((s, seg) => s + segLength(seg), 0);
 
     if (music) {
@@ -149,7 +168,7 @@ export class MeditationEngine {
       // caps how much of it is ever heard. It still routes through the
       // graph, so the slider, ducking, and the single output remain.
       const asset = await db.assets.get(music.assetId);
-      if (this.ctx !== ctx) return;
+      if (this.ctx !== ctx) return false;
       if (asset) {
         // The music is its own media element, screen-off capable in its
         // own right, with ducking driven on its volume directly. No
@@ -187,7 +206,7 @@ export class MeditationEngine {
       };
       check();
     });
-    if (this.ctx !== ctx) return;
+    if (this.ctx !== ctx) return false;
     if (el.paused || el.currentTime <= 0.05) {
       // Element output unavailable: go direct.
       this.master.disconnect();
@@ -221,7 +240,7 @@ export class MeditationEngine {
     } else {
       await new Promise((r) => window.setTimeout(r, 450));
     }
-    if (this.ctx !== ctx) return;
+    if (this.ctx !== ctx) return false;
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata(meta);
       navigator.mediaSession.setActionHandler('play', () => void this.resume());
@@ -265,6 +284,7 @@ export class MeditationEngine {
         this.stop();
       }
     }, 250);
+    return true;
   }
 
   // Clears scheduled sources and reschedules everything from a content

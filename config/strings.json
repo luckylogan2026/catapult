@@ -449,7 +449,8 @@
     "resume": "Resume",
     "restart": "Restart",
     "audioMissing": "Audio not on this device yet. Sync now fetches it.",
-    "roleAffirmations": "Affirmations"
+    "roleAffirmations": "Affirmations",
+    "missingAudio": "Could not find the audio for: {items}. Connect to Wi-Fi and tap Sync now in Settings, then try again."
   },
   "tracker": {
     "positionOf": "{n} of {total}",

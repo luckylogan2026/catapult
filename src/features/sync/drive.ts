@@ -350,6 +350,28 @@ export async function restoreFromDrive(
   return { board, assets };
 }
 
+/** Repairs one asset the moment playback needs it and finds it
+ * missing locally: assets are named by content id in the app's Drive
+ * folder, the same scheme repairAssets uses in the background, so a
+ * single file is a direct lookup. Silent and best-effort: no sign-in
+ * popup, and any failure (offline, no token, not on Drive) just means
+ * the caller keeps treating the asset as missing. */
+export async function fetchMissingAsset(id: string): Promise<boolean> {
+  if (!(await acquireToken(false))) return false;
+  try {
+    const folderId = await findOrCreateFolder();
+    const files = await listFolder(folderId);
+    const file = files.find((f) => f.name === id);
+    if (!file) return false;
+    const blob = await downloadFile(file.id);
+    const { storeBundleAsset } = await import('../exports/visionBundle');
+    await storeBundleAsset(id, blob);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Whether this account's Drive already holds a board, for the
  * first-run walkthrough to offer a restore instead of a fresh start. */
 export async function driveHasBoard(): Promise<boolean> {
