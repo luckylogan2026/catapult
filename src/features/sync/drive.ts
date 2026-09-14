@@ -91,6 +91,14 @@ export async function acquireToken(interactive: boolean): Promise<boolean> {
   } catch {
     return false;
   }
+  // The account list is only forced the first time this browser
+  // profile ever links to Drive: that is the one moment picking the
+  // wrong account goes unnoticed (an empty Drive, no error). Once a
+  // device is known to be connected, tokens expire hourly and showing
+  // the full picker on every renewal made the app feel like it demanded
+  // sign-in constantly; a returning device gets Google's normal fast
+  // reissue instead, silent when the browser still has one session.
+  const everConnected = await kvGet<boolean>('driveConnected');
   return new Promise((resolve) => {
     // A blocked or closed popup must not leave the caller waiting
     // forever: GIS reports it through error_callback, and a timeout
@@ -121,9 +129,7 @@ export async function acquireToken(interactive: boolean): Promise<boolean> {
         }
       },
     });
-    // Always show the account list: a silent auto-pick of the wrong
-    // Google account sends the user to an empty Drive with no clue why.
-    client.requestAccessToken({ prompt: 'select_account' });
+    client.requestAccessToken(everConnected ? undefined : { prompt: 'select_account' });
   });
 }
 

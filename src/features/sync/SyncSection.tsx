@@ -30,6 +30,12 @@ type ConflictState = {
   remoteStamp: string | null;
   remoteEdited: string;
   localEdited: string;
+  // Counted the moment the conflict is detected: a bare timestamp does
+  // not tell you which side would lose more if you picked wrong.
+  localPages: number;
+  remotePages: number;
+  localCompletions: number;
+  remoteCompletions: number;
 };
 
 export function useSyncEngine() {
@@ -88,7 +94,13 @@ export function useSyncEngine() {
           await kvSet('lastSyncedRevision', stored.revision);
           setStatus(y.statusPulled);
         } else if (outcome.kind === 'conflict') {
-          setConflict(outcome);
+          setConflict({
+            ...outcome,
+            localPages: b.pages.length,
+            remotePages: outcome.remoteBoard.pages.length,
+            localCompletions: b.streak?.completions?.length ?? 0,
+            remoteCompletions: outcome.remoteBoard.streak?.completions?.length ?? 0,
+          });
           setStatus(null);
         } else if (outcome.kind === 'error') {
           setStatus(y.statusError);
@@ -338,19 +350,36 @@ export function ConflictDialog({
   const { conflict, resolveConflict } = engine;
   if (!conflict) return null;
   const fmt = (iso: string) => new Date(iso).toLocaleString();
+  const side = (label: string, edited: string, pages: number, completions: number) => (
+    <div className="rounded border border-text-muted/20 px-3 py-2">
+      <p className="font-body text-xs font-medium text-text">{label}</p>
+      <p className="mt-0.5 font-body text-xs text-text-muted">{fmt(edited)}</p>
+      <p className="mt-0.5 font-body text-xs text-text-muted">
+        {y.conflictCounts.replace('{pages}', String(pages)).replace('{completions}', String(completions))}
+      </p>
+    </div>
+  );
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
       <div className="w-full max-w-md rounded-lg bg-surface p-5">
         <h2 className="font-heading text-xl text-text">{y.conflictTitle}</h2>
-        <p className="mt-2 font-body text-sm text-text-muted">
-          {y.conflictBody
-            .replace('{local}', fmt(conflict.localEdited))
-            .replace('{remote}', fmt(conflict.remoteEdited))}
-        </p>
+        <p className="mt-2 font-body text-sm text-text-muted">{y.conflictBody}</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {side(y.conflictThisDevice, conflict.localEdited, conflict.localPages, conflict.localCompletions)}
+          {side(y.conflictDrive, conflict.remoteEdited, conflict.remotePages, conflict.remoteCompletions)}
+        </div>
         <div className="mt-4 flex flex-col gap-2">
           <button
             type="button"
-            className="rounded bg-primary px-4 py-2 font-body text-sm font-medium text-background"
+            className="rounded bg-primary px-4 py-2.5 font-body text-sm font-medium text-background"
+            onClick={() => void resolveConflict('both')}
+          >
+            {y.keepBoth}
+          </button>
+          <p className="-mt-1 font-body text-[11px] text-text-muted">{y.keepBothHint}</p>
+          <button
+            type="button"
+            className="mt-2 rounded border border-text-muted/30 px-4 py-2 font-body text-sm text-text"
             onClick={() => void resolveConflict('local')}
           >
             {y.keepLocal}
@@ -361,13 +390,6 @@ export function ConflictDialog({
             onClick={() => void resolveConflict('remote')}
           >
             {y.keepRemote}
-          </button>
-          <button
-            type="button"
-            className="rounded border border-text-muted/30 px-4 py-2 font-body text-sm text-text"
-            onClick={() => void resolveConflict('both')}
-          >
-            {y.keepBoth}
           </button>
         </div>
       </div>
