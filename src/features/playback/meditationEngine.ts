@@ -13,12 +13,12 @@ import { fetchMissingAsset } from '../sync/drive';
 // any point, starting mid-buffer where needed.
 
 export type EngineSegment =
-  | { kind: 'audio'; assetId: string; label?: string }
+  | { kind: 'audio'; assetId: string; label?: string; repeat?: number }
   | { kind: 'silence'; seconds: number; label?: string };
 
 type LoadedSegment =
-  | { kind: 'audio'; buffer: AudioBuffer; gain: number; label?: string }
-  | { kind: 'stream'; element: HTMLAudioElement; duration: number; label?: string }
+  | { kind: 'audio'; buffer: AudioBuffer; gain: number; label?: string; repeat?: number }
+  | { kind: 'stream'; element: HTMLAudioElement; duration: number; label?: string; repeat?: number }
   | { kind: 'silence'; seconds: number; label?: string };
 
 const TARGET_RMS = 0.08;
@@ -149,16 +149,37 @@ export class MeditationEngine {
         if (this.ctx !== ctx) return false;
         if (buffer) {
           decodedSeconds += buffer.duration;
-          this.loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label });
+          this.loaded.push({ kind: 'audio', buffer, gain: measureGain(buffer), label: seg.label, repeat: seg.repeat });
           el.removeAttribute('src');
           continue;
         }
       }
       if (duration > 0) {
         document.body.appendChild(el);
-        this.loaded.push({ kind: 'stream', element: el, duration, label: seg.label });
+        this.loaded.push({ kind: 'stream', element: el, duration, label: seg.label, repeat: seg.repeat });
       }
     }
+    // Repeats: a decoded buffer is shared by every pass (it is read
+    // only), but each pass of a streamed recording needs its own media
+    // element, because the ticker pauses an element outside its window.
+    this.loaded = this.loaded.flatMap((seg): LoadedSegment[] => {
+      const n = seg.kind === 'silence' ? 1 : Math.max(1, Math.min(99, Math.round(seg.repeat ?? 1)));
+      if (n === 1 || seg.kind === 'silence') return [seg];
+      const out: LoadedSegment[] = [seg];
+      for (let i = 1; i < n; i++) {
+        if (seg.kind === 'audio') {
+          out.push({ ...seg });
+        } else {
+          const el = new Audio();
+          el.src = seg.element.src;
+          el.preload = 'metadata';
+          el.style.display = 'none';
+          document.body.appendChild(el);
+          out.push({ ...seg, element: el });
+        }
+      }
+      return out;
+    });
     if (this.ctx !== ctx) return false;
     this.contentTotal = this.loaded.reduce((s, seg) => s + segLength(seg), 0);
 

@@ -366,7 +366,13 @@
     "resetColors": "Reset to preset",
     "fromImage": "From image",
     "fromImageHint": "Pick a logo or brand image; the main colors become your palette.",
-    "boardsStored": "Boards in store: {n}"
+    "boardsStored": "Boards in store: {n}",
+    "versionLabel": "Version {version}",
+    "checkUpdate": "Check for updates",
+    "updateChecking": "Checking...",
+    "updateInstalling": "New version found, restarting...",
+    "updateCurrent": "You are on the latest version.",
+    "updateOffline": "Connect to the internet to check for updates."
   },
   "playback": {
     "preview": "Play",
@@ -454,7 +460,8 @@
     "restart": "Restart",
     "audioMissing": "Audio not on this device yet. Sync now fetches it.",
     "roleAffirmations": "Affirmations",
-    "missingAudio": "Could not find the audio for: {items}. Connect to Wi-Fi and tap Sync now in Settings, then try again."
+    "missingAudio": "Could not find the audio for: {items}. Connect to Wi-Fi and tap Sync now in Settings, then try again.",
+    "repeatLabel": "times"
   },
   "tracker": {
     "positionOf": "{n} of {total}",

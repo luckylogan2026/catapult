@@ -172,7 +172,7 @@ export type LibraryRecording = {
 
 /** One meditation sequence slot: a library recording, or timed silence. */
 export type MeditationSlot =
-  | { kind: 'recording'; libraryId: string }
+  | { kind: 'recording'; libraryId: string; /** Times to play it back to back; affirmations only. Default 1. */ repeat?: number }
   | { kind: 'silence'; minutes: number };
 
 /** The meditation builder configuration, persisted and synced. */

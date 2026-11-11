@@ -1,3 +1,4 @@
+import { NumberField } from '../../components/NumberField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '../../config';
@@ -135,7 +136,13 @@ export function MeditationPlayer({
         segments.push({ kind: 'silence', seconds: slot.minutes * 60, label: m.slotSilence });
       } else {
         const rec = library.find((r) => r.id === slot.libraryId);
-        if (rec) segments.push({ kind: 'audio', assetId: rec.assetId, label: optionLabel(rec) });
+        if (rec)
+          segments.push({
+            kind: 'audio',
+            assetId: rec.assetId,
+            label: optionLabel(rec),
+            repeat: rec.role === 'affirmations' ? (slot.repeat ?? 1) : 1,
+          });
       }
     }
     if (!segments.length) return;
@@ -226,6 +233,24 @@ export function MeditationPlayer({
                 >
                   {slotSummary(slot)}
                 </button>
+                {slot?.kind === 'recording' &&
+                  library.find((r) => r.id === slot.libraryId)?.role === 'affirmations' && (
+                    <label className="flex shrink-0 items-center gap-1 font-body text-[11px] text-white/60">
+                      <NumberField
+                        value={slot.repeat ?? 1}
+                        min={1}
+                        max={99}
+                        onCommit={(repeat) => {
+                          if (engineRef.current?.playing) stop();
+                          const slots = [...config.slots];
+                          slots[i] = { kind: 'recording', libraryId: slot.libraryId, repeat };
+                          save({ ...config, slots });
+                        }}
+                        className="w-12 rounded border border-white/15 bg-black/40 px-1 py-0.5 text-white"
+                      />
+                      {m.repeatLabel}
+                    </label>
+                  )}
                 {slot?.kind === 'silence' && (
                   <label className="flex shrink-0 items-center gap-1 font-body text-[11px] text-white/60">
                     <SilenceMinutes

@@ -49,6 +49,38 @@ export function SettingsPanel({
     void import('../../db/boardRepo').then((m) => m.boardCount().then(setBoardsStored));
   }, []);
 
+  const [updateNote, setUpdateNote] = useState<string | null>(null);
+  // Looks for a newer build and reloads into it. The service worker
+  // swaps itself in on install (skip waiting + claim), so the page only
+  // has to notice the controller change and reload once.
+  const checkForUpdate = async () => {
+    if (!('serviceWorker' in navigator) || !navigator.onLine) {
+      setUpdateNote(s.updateOffline);
+      return;
+    }
+    setUpdateNote(s.updateChecking);
+    const regs = await navigator.serviceWorker.getRegistrations();
+    let swapped = false;
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      () => {
+        swapped = true;
+        setUpdateNote(s.updateInstalling);
+        window.setTimeout(() => window.location.reload(), 400);
+      },
+      { once: true },
+    );
+    try {
+      await Promise.all(regs.map((r) => r.update()));
+    } catch {
+      setUpdateNote(s.updateOffline);
+      return;
+    }
+    window.setTimeout(() => {
+      if (!swapped) setUpdateNote(s.updateCurrent);
+    }, 6000);
+  };
+
   const saveBackup = async () => {
     if (!board) return;
     setBusy(s.exporting);
@@ -391,6 +423,22 @@ export function SettingsPanel({
               {persisted ? s.storagePersistent : s.storageNotPersistent}
             </p>
           )}
+        </div>
+
+        <div className="mt-4 rounded border border-text-muted/20 p-3">
+          <p className="font-body text-sm font-medium text-text">
+            {s.versionLabel.replace('{version}', __BUILD_ID__)}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="rounded border border-text-muted/30 px-3 py-1.5 font-body text-sm text-text hover:border-primary"
+              onClick={() => void checkForUpdate()}
+            >
+              {s.checkUpdate}
+            </button>
+            {updateNote && <span className="font-body text-xs text-text-muted">{updateNote}</span>}
+          </div>
         </div>
 
         {syncEngine && <SyncSection engine={syncEngine} />}

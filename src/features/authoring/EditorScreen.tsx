@@ -77,12 +77,16 @@ function EditorInner() {
     if (connectChecked.current) return;
     const t = window.setTimeout(() => {
       connectChecked.current = true;
-      if (clientIdConfigured() && (!syncEngine.connected || syncEngine.paused)) {
+      // Only a device that has never linked Drive gets the modal, and
+      // never while offline (it could not sign in anyway). A linked
+      // device whose hourly token lapsed gets the amber header pill
+      // instead, which is quiet enough to open the app twice a day.
+      if (clientIdConfigured() && !syncEngine.connected && navigator.onLine) {
         setConnectPrompt(true);
       }
     }, 2500);
     return () => window.clearTimeout(t);
-  }, [syncEngine.connected, syncEngine.paused]);
+  }, [syncEngine.connected]);
 
   const page = board?.pages.find((p) => p.id === selectedPageId) ?? board?.pages[0] ?? null;
   const pageId = page?.id ?? null;
