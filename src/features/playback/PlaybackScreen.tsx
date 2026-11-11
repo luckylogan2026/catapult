@@ -318,6 +318,10 @@ export function PlaybackScreen({
         const w = width();
         if (pendingTap) {
           startPending();
+        } else if (current?.page.type === 'asp-process') {
+          // The meditation page is a form (slots, repeat, minutes):
+          // a tap that merely leaves a field must not turn the page.
+          // Swiping still moves on.
         } else if (ev.clientX < w / 6) {
           back();
         } else if (ev.clientX < (w * 2) / 3) {
