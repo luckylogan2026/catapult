@@ -1,3 +1,4 @@
+import { db } from '../../db/db';
 import { NumberField } from '../../components/NumberField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -60,12 +61,43 @@ export function MeditationPlayer({
   const [scrub, setScrub] = useState<number | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
   const autoStarted = useRef(false);
+  // Planned length of the configured sequence, from the durations stored
+  // at import (silences and repeats included). An unknown duration marks
+  // the total approximate instead of silently undercounting.
+  const [planned, setPlanned] = useState<{ seconds: number; approx: boolean }>({ seconds: 0, approx: false });
 
   const library = useMemo(() => board?.meditationLibrary ?? [], [board?.meditationLibrary]);
   // The deck freezes its screen list at session start; the live board
   // carries the current configuration.
   const livePage = board?.pages.find((p) => p.id === page.id) ?? page;
   const config: MeditationConfig = livePage.meditation ?? { slots: [] };
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      let seconds = 0;
+      let approx = false;
+      for (const slot of config.slots) {
+        if (!slot) continue;
+        if (slot.kind === 'silence') {
+          seconds += slot.minutes * 60;
+          continue;
+        }
+        const rec = library.find((r) => r.id === slot.libraryId);
+        const asset = rec ? await db.assets.get(rec.assetId) : undefined;
+        if (!asset?.durationMs) {
+          approx = true;
+          continue;
+        }
+        const times = rec?.role === 'affirmations' ? (slot.repeat ?? 1) : 1;
+        seconds += (asset.durationMs / 1000) * times;
+      }
+      if (!cancelled) setPlanned({ seconds, approx });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [config.slots, library]);
 
   useEffect(() => {
     return () => {
@@ -267,6 +299,13 @@ export function MeditationPlayer({
               </div>
             ))}
 
+            {planned.seconds > 0 && (
+              <p className="text-right font-body text-[10px] text-white/50">
+                {m.totalLabel}: {planned.approx ? '~' : ''}
+                {fmtTime(planned.seconds)}
+              </p>
+            )}
+
             <div className="flex items-center gap-1.5">
               <span className="w-10 shrink-0 font-body text-[9px] uppercase tracking-wider text-white/40">
                 {m.musicLabel}
@@ -353,7 +392,9 @@ export function MeditationPlayer({
                 </div>
               </div>
               <div className="flex items-center justify-between font-body text-[10px] text-white/60">
-                <span>{fmtTime(scrub !== null ? scrub * progress.total : progress.elapsed)}</span>
+                <span>
+                  {fmtTime(scrub !== null ? scrub * progress.total : progress.elapsed)} / {fmtTime(progress.total)}
+                </span>
                 <span className="truncate px-2">{progress.label ?? ''}</span>
                 <span>
                   -{fmtTime(Math.max(0, progress.total - (scrub !== null ? scrub * progress.total : progress.elapsed)))}
