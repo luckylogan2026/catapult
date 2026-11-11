@@ -85,12 +85,25 @@ export function MeditationPlayer({
         }
         const rec = library.find((r) => r.id === slot.libraryId);
         const asset = rec ? await db.assets.get(rec.assetId) : undefined;
-        if (!asset?.durationMs) {
+        let durationMs = asset?.durationMs;
+        if (asset && !durationMs) {
+          // Recordings imported or restored without a stored length are
+          // measured once from their metadata and remembered, so the
+          // total is known while building, not only after Play.
+          try {
+            const { audioDurationMs } = await import('../../assetPipeline/audio');
+            durationMs = await audioDurationMs(asset.blob);
+            await db.assets.update(asset.id, { durationMs });
+          } catch {
+            durationMs = undefined;
+          }
+        }
+        if (!durationMs) {
           approx = true;
           continue;
         }
         const times = rec?.role === 'affirmations' ? (slot.repeat ?? 1) : 1;
-        seconds += (asset.durationMs / 1000) * times;
+        seconds += (durationMs / 1000) * times;
       }
       if (!cancelled) setPlanned({ seconds, approx });
     })();
