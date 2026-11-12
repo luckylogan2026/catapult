@@ -88,6 +88,9 @@ export class MeditationEngine {
    * repair from Drive: the session plays on without it rather than
    * failing outright, but the caller should tell the user. */
   onMissingAudio: ((label?: string) => void) | null = null;
+  /** Set when the browser refused to start audio because no tap has
+   * happened yet (autoplay policy). The caller shows a Play prompt. */
+  blocked = false;
 
   async play(
     segments: EngineSegment[],
@@ -95,9 +98,19 @@ export class MeditationEngine {
     meta: { title: string; artist: string },
   ): Promise<boolean> {
     this.stop();
+    this.blocked = false;
     const ctx = new AudioContext();
     this.ctx = ctx;
     await ctx.resume().catch(() => {});
+    if (ctx.state !== 'running') {
+      // Without a tap the clock stays frozen: the voice never schedules
+      // and the counter sits at zero while the music element, under a
+      // different policy, would still start. Better to wait for Play
+      // than to run half a session.
+      this.stop();
+      this.blocked = true;
+      return false;
+    }
     this.dest = ctx.createMediaStreamDestination();
     this.master = ctx.createGain();
     this.master.connect(this.dest);

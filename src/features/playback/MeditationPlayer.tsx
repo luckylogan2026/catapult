@@ -60,6 +60,7 @@ export function MeditationPlayer({
   const [picker, setPicker] = useState<number | 'music' | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
+  const [needsTap, setNeedsTap] = useState(false);
   const autoStarted = useRef(false);
   // Planned length of the configured sequence, from the durations stored
   // at import (silences and repeats included). An unknown duration marks
@@ -167,6 +168,7 @@ export function MeditationPlayer({
     engineRef.current?.stop();
     engineRef.current = engine;
     setMissing([]);
+    setNeedsTap(false);
     engine.onVoiceActive = (a) => onVoiceActive?.(a);
     engine.onMissingAudio = (label) => {
       setMissing((cur) => (label && !cur.includes(label) ? [...cur, label] : cur));
@@ -214,6 +216,8 @@ export function MeditationPlayer({
       if (ok && engineRef.current === engine) {
         setPlaying(true);
         setPausedUi(false);
+      } else if (engine.blocked && engineRef.current === engine) {
+        setNeedsTap(true);
       }
     } finally {
       setLoading(false);
@@ -364,6 +368,10 @@ export function MeditationPlayer({
                 {m.musicDuckLabel}
               </label>
             </div>
+          )}
+
+          {needsTap && !playing && (
+            <p className="mt-2 font-body text-[11px] text-white/60">{m.tapToBegin}</p>
           )}
 
           {missing.length > 0 && (

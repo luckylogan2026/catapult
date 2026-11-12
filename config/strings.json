@@ -462,7 +462,8 @@
     "roleAffirmations": "Affirmations",
     "missingAudio": "Could not find the audio for: {items}. Connect to Wi-Fi and tap Sync now in Settings, then try again.",
     "repeatLabel": "times",
-    "totalLabel": "Total"
+    "totalLabel": "Total",
+    "tapToBegin": "Tap Play to begin."
   },
   "tracker": {
     "positionOf": "{n} of {total}",
