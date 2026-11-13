@@ -317,7 +317,7 @@ export function MeditationPlayer({
             ))}
 
             {planned.seconds > 0 && (
-              <p className="text-right font-body text-[10px] text-white/50">
+              <p className="text-right font-body text-[11px] font-medium text-white">
                 {m.totalLabel}: {planned.approx ? '~' : ''}
                 {fmtTime(planned.seconds)}
               </p>
@@ -413,11 +413,11 @@ export function MeditationPlayer({
                 </div>
               </div>
               <div className="flex items-center justify-between font-body text-[10px] text-white/60">
-                <span>
+                <span className="text-white">
                   {fmtTime(scrub !== null ? scrub * progress.total : progress.elapsed)} / {fmtTime(progress.total)}
                 </span>
                 <span className="truncate px-2">{progress.label ?? ''}</span>
-                <span>
+                <span className="text-white">
                   -{fmtTime(Math.max(0, progress.total - (scrub !== null ? scrub * progress.total : progress.elapsed)))}
                 </span>
               </div>
