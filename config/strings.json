@@ -463,7 +463,9 @@
     "missingAudio": "Could not find the audio for: {items}. Connect to Wi-Fi and tap Sync now in Settings, then try again.",
     "repeatLabel": "times",
     "totalLabel": "Total",
-    "tapToBegin": "Tap Play to begin."
+    "tapToBegin": "Tap Play to begin.",
+    "moveUp": "Move step up",
+    "moveDown": "Move step down"
   },
   "tracker": {
     "positionOf": "{n} of {total}",

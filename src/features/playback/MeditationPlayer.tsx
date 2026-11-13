@@ -163,6 +163,17 @@ export function MeditationPlayer({
     save({ ...config, slots: slots.slice(0, MAX_SLOTS) });
   };
 
+  // Swaps a step with its neighbour; the step's own minutes or repeat
+  // count travel with it. A running session stops, like any edit.
+  const moveSlot = (index: number, dir: -1 | 1) => {
+    const slots = config.slots.filter(Boolean);
+    const to = index + dir;
+    if (to < 0 || to >= slots.length) return;
+    [slots[index], slots[to]] = [slots[to], slots[index]];
+    if (engineRef.current?.playing) stop();
+    save({ ...config, slots });
+  };
+
   const start = async () => {
     const engine = new MeditationEngine();
     engineRef.current?.stop();
@@ -312,6 +323,28 @@ export function MeditationPlayer({
                     />
                     {m.minutesLabel}
                   </label>
+                )}
+                {slot !== null && (
+                  <span className="flex shrink-0 flex-col">
+                    <button
+                      type="button"
+                      aria-label={m.moveUp}
+                      disabled={i === 0}
+                      onClick={() => moveSlot(i, -1)}
+                      className="px-2 text-[11px] leading-[17px] text-white/80 hover:text-white disabled:opacity-20"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={m.moveDown}
+                      disabled={i >= config.slots.length - 1}
+                      onClick={() => moveSlot(i, 1)}
+                      className="px-2 text-[11px] leading-[17px] text-white/80 hover:text-white disabled:opacity-20"
+                    >
+                      ▼
+                    </button>
+                  </span>
                 )}
               </div>
             ))}
