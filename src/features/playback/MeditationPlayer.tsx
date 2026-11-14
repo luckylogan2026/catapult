@@ -3,7 +3,14 @@ import { NumberField } from '../../components/NumberField';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '../../config';
-import type { Board, LibraryRecording, MeditationConfig, MeditationSlot, Page } from '../../domain/types';
+import type {
+  Board,
+  LibraryRecording,
+  MeditationConfig,
+  MeditationPreset,
+  MeditationSlot,
+  Page,
+} from '../../domain/types';
 import { useBoardContext } from '../board/BoardContext';
 import { MeditationEngine, type EngineSegment } from './meditationEngine';
 
@@ -61,6 +68,7 @@ export function MeditationPlayer({
   const [scrub, setScrub] = useState<number | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
   const [needsTap, setNeedsTap] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const autoStarted = useRef(false);
   // Planned length of the configured sequence, from the durations stored
   // at import (silences and repeats included). An unknown duration marks
@@ -172,6 +180,35 @@ export function MeditationPlayer({
     [slots[index], slots[to]] = [slots[to], slots[index]];
     if (engineRef.current?.playing) stop();
     save({ ...config, slots });
+  };
+
+  const savePreset = (name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    const copy: MeditationConfig = structuredClone(config);
+    mutate(
+      (b: Board) => {
+        const list = b.meditationPresets ?? [];
+        const existing = list.find((x) => x.name.toLowerCase() === clean.toLowerCase());
+        const next: MeditationPreset[] = existing
+          ? list.map((x) => (x.id === existing.id ? { ...x, name: clean, config: copy } : x))
+          : [...list, { id: crypto.randomUUID(), name: clean, config: copy }];
+        return { ...b, meditationPresets: next };
+      },
+      { undoable: false },
+    );
+  };
+
+  const loadPreset = (preset: MeditationPreset) => {
+    if (engineRef.current?.playing) stop();
+    save(structuredClone(preset.config));
+  };
+
+  const deletePreset = (id: string) => {
+    mutate(
+      (b: Board) => ({ ...b, meditationPresets: (b.meditationPresets ?? []).filter((x) => x.id !== id) }),
+      { undoable: false },
+    );
   };
 
   const start = async () => {
@@ -325,13 +362,13 @@ export function MeditationPlayer({
                   </label>
                 )}
                 {slot !== null && (
-                  <span className="flex shrink-0 flex-col">
+                  <span className="flex shrink-0 gap-0.5">
                     <button
                       type="button"
                       aria-label={m.moveUp}
                       disabled={i === 0}
                       onClick={() => moveSlot(i, -1)}
-                      className="px-2 text-[11px] leading-[17px] text-white/80 hover:text-white disabled:opacity-20"
+                      className="h-8 w-8 rounded-md border border-white/20 text-sm leading-none text-white hover:bg-white/10 disabled:opacity-20"
                     >
                       ▲
                     </button>
@@ -340,7 +377,7 @@ export function MeditationPlayer({
                       aria-label={m.moveDown}
                       disabled={i >= config.slots.length - 1}
                       onClick={() => moveSlot(i, 1)}
-                      className="px-2 text-[11px] leading-[17px] text-white/80 hover:text-white disabled:opacity-20"
+                      className="h-8 w-8 rounded-md border border-white/20 text-sm leading-none text-white hover:bg-white/10 disabled:opacity-20"
                     >
                       ▼
                     </button>
@@ -349,12 +386,21 @@ export function MeditationPlayer({
               </div>
             ))}
 
-            {planned.seconds > 0 && (
-              <p className="text-right font-body text-[11px] font-medium text-white">
-                {m.totalLabel}: {planned.approx ? '~' : ''}
-                {fmtTime(planned.seconds)}
-              </p>
-            )}
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setPresetsOpen(true)}
+                className="rounded-md border border-white/20 px-2.5 py-1 font-body text-[11px] text-white hover:bg-white/10"
+              >
+                {m.presets}
+              </button>
+              {planned.seconds > 0 && (
+                <p className="font-body text-[11px] font-medium text-white">
+                  {m.totalLabel}: {planned.approx ? '~' : ''}
+                  {fmtTime(planned.seconds)}
+                </p>
+              )}
+            </div>
 
             <div className="flex items-center gap-1.5">
               <span className="w-10 shrink-0 font-body text-[9px] uppercase tracking-wider text-white/40">
@@ -507,6 +553,19 @@ export function MeditationPlayer({
             </div>
           )}
 
+          {presetsOpen && (
+            <PresetSheet
+              presets={board.meditationPresets ?? []}
+              onLoad={(pr) => {
+                loadPreset(pr);
+                setPresetsOpen(false);
+              }}
+              onSave={savePreset}
+              onDelete={deletePreset}
+              onClose={() => setPresetsOpen(false)}
+            />
+          )}
+
           {picker !== null && (
             <SlotSheet
               library={library}
@@ -535,6 +594,103 @@ export function MeditationPlayer({
         </>
       )}
     </div>
+  );
+}
+
+// Named meditation setups: tap one to load it onto this page, or name
+// the current arrangement and save it. Saving under an existing name
+// replaces that preset. Portaled like the slot sheet, for the same
+// reason: the deck's transformed screens would misplace a fixed sheet.
+function PresetSheet({
+  presets,
+  onLoad,
+  onSave,
+  onDelete,
+  onClose,
+}: {
+  presets: MeditationPreset[];
+  onLoad: (p: MeditationPreset) => void;
+  onSave: (name: string) => void;
+  onDelete: (id: string) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState('');
+  const overwrites = presets.some((x) => x.name.toLowerCase() === name.trim().toLowerCase());
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50"
+      onClick={onClose}
+      onPointerDown={(ev) => ev.stopPropagation()}
+      onPointerUp={(ev) => ev.stopPropagation()}
+    >
+      <div
+        className="w-full max-w-md overflow-y-auto rounded-t-2xl bg-[#141414] p-3 pb-6"
+        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 64px)' }}
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="relative mb-2">
+          <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute -top-1 right-0 rounded-full px-2 py-0.5 font-body text-sm text-white/60 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="px-1 pb-2 font-body text-[11px] uppercase tracking-wider text-white/50">
+          {m.presetsTitle}
+        </p>
+        {presets.length === 0 && (
+          <p className="px-1 pb-2 font-body text-xs text-white/60">{m.presetsEmpty}</p>
+        )}
+        {presets.map((pr) => (
+          <div key={pr.id} className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onLoad(pr)}
+              className="min-w-0 grow truncate rounded-md px-3 py-2.5 text-left font-body text-sm text-white/90 hover:bg-white/10"
+            >
+              {pr.name}
+            </button>
+            <button
+              type="button"
+              aria-label={m.presetDelete}
+              onClick={() => {
+                if (window.confirm(m.presetDeleteConfirm.replace('{name}', pr.name))) onDelete(pr.id);
+              }}
+              className="h-9 w-9 shrink-0 rounded-md font-body text-sm text-white/50 hover:bg-white/10 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <p className="px-1 pb-1.5 font-body text-[11px] text-white/50">{m.presetSaveHint}</p>
+          <div className="flex gap-2">
+            <input
+              value={name}
+              onChange={(ev) => setName(ev.target.value)}
+              placeholder={m.presetNamePlaceholder}
+              className="min-w-0 grow rounded-md border border-white/20 bg-black/40 px-2.5 py-2 font-body text-sm text-white outline-none placeholder:text-white/30 focus:border-white/50"
+            />
+            <button
+              type="button"
+              disabled={!name.trim()}
+              onClick={() => {
+                onSave(name);
+                setName('');
+                onClose();
+              }}
+              className="shrink-0 rounded-md bg-primary px-3 py-2 font-body text-sm font-medium text-background disabled:opacity-40"
+            >
+              {overwrites ? m.presetUpdate : m.presetSave}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

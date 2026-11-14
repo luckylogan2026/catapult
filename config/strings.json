@@ -465,7 +465,16 @@
     "totalLabel": "Total",
     "tapToBegin": "Tap Play to begin.",
     "moveUp": "Move step up",
-    "moveDown": "Move step down"
+    "moveDown": "Move step down",
+    "presets": "Presets",
+    "presetsTitle": "Saved setups",
+    "presetsEmpty": "No saved setups yet. Name the current steps below to keep them.",
+    "presetSaveHint": "Save the current steps, music and volume as:",
+    "presetNamePlaceholder": "Setup name",
+    "presetSave": "Save",
+    "presetUpdate": "Update",
+    "presetDelete": "Delete setup",
+    "presetDeleteConfirm": "Delete the setup \"{name}\"?"
   },
   "tracker": {
     "positionOf": "{n} of {total}",

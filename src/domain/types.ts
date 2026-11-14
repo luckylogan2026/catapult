@@ -185,6 +185,13 @@ export type MeditationConfig = {
   musicDuck?: boolean;
 };
 
+/** A named copy of a meditation configuration. */
+export type MeditationPreset = {
+  id: string;
+  name: string;
+  config: MeditationConfig;
+};
+
 export type Affirmation = {
   id: string;
   text: string;
@@ -310,6 +317,8 @@ export type Board = {
   affirmations: Affirmation[];
   masterAffirmations?: MasterAffirmation[];
   meditationLibrary?: LibraryRecording[];
+  /** Named meditation setups, saved from the builder and loadable onto any meditation page. */
+  meditationPresets?: MeditationPreset[];
   playlists: Playlist[];
   streak: StreakRecord;
   pendingRatings?: PendingRating[];
