@@ -474,7 +474,8 @@
     "presetSave": "Save",
     "presetUpdate": "Update",
     "presetDelete": "Delete setup",
-    "presetDeleteConfirm": "Delete the setup \"{name}\"?"
+    "presetDeleteConfirm": "Delete the setup \"{name}\"?",
+    "presetSaveHintPick": "Save the current setup. Tap a name to replace it, or type a new one:"
   },
   "tracker": {
     "positionOf": "{n} of {total}",

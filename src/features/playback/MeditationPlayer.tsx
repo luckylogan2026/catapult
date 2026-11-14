@@ -666,7 +666,28 @@ function PresetSheet({
           </div>
         ))}
         <div className="mt-3 border-t border-white/10 pt-3">
-          <p className="px-1 pb-1.5 font-body text-[11px] text-white/50">{m.presetSaveHint}</p>
+          <p className="px-1 pb-1.5 font-body text-[11px] text-white/50">{presets.length > 0 ? m.presetSaveHintPick : m.presetSaveHint}</p>
+          {presets.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {presets.map((pr) => {
+                const picked = pr.name.toLowerCase() === name.trim().toLowerCase();
+                return (
+                  <button
+                    key={pr.id}
+                    type="button"
+                    onClick={() => setName(pr.name)}
+                    className={`max-w-full truncate rounded-full border px-3 py-1 font-body text-xs ${
+                      picked
+                        ? 'border-primary bg-primary/20 text-white'
+                        : 'border-white/20 text-white/70 hover:text-white'
+                    }`}
+                  >
+                    {pr.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="flex gap-2">
             <input
               value={name}
