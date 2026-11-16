@@ -27,6 +27,21 @@ const ROLE_LABELS: Record<string, string> = {
   music: m.roleMusic,
 };
 
+// A configuration reduced to what affects playback, so a preset can be
+// recognised as "the one on the card" however its fields were written.
+function configKey(c: MeditationConfig): string {
+  return JSON.stringify({
+    slots: c.slots.filter(Boolean).map((s) =>
+      s.kind === 'silence'
+        ? ['s', s.minutes]
+        : ['r', s.libraryId, Math.max(1, Math.round(s.repeat ?? 1))],
+    ),
+    music: c.musicLibraryId ?? null,
+    volume: Math.round((c.musicVolume ?? 0.5) * 100),
+    duck: c.musicDuck ?? false,
+  });
+}
+
 function fmtTime(s: number): string {
   const total = Math.round(s);
   const mm = Math.floor(total / 60);
@@ -80,6 +95,12 @@ export function MeditationPlayer({
   // carries the current configuration.
   const livePage = board?.pages.find((p) => p.id === page.id) ?? page;
   const config: MeditationConfig = livePage.meditation ?? { slots: [] };
+  const presets = board?.meditationPresets;
+  const activePreset = useMemo(() => {
+    if (!config.slots.length) return null;
+    const key = configKey(config);
+    return (presets ?? []).find((x) => configKey(x.config) === key) ?? null;
+  }, [config, presets]);
 
   useEffect(() => {
     let cancelled = false;
@@ -394,6 +415,11 @@ export function MeditationPlayer({
               >
                 {m.presets}
               </button>
+              {activePreset && (
+                <span className="min-w-0 grow truncate font-body text-[11px] text-white/80">
+                  {activePreset.name}
+                </span>
+              )}
               {planned.seconds > 0 && (
                 <p className="font-body text-[11px] font-medium text-white">
                   {m.totalLabel}: {planned.approx ? '~' : ''}
