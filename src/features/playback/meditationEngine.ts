@@ -18,10 +18,13 @@ export type EngineSegment =
 
 type LoadedSegment =
   | { kind: 'audio'; buffer: AudioBuffer; gain: number; label?: string; repeat?: number }
-  | { kind: 'stream'; element: HTMLAudioElement; duration: number; label?: string; repeat?: number }
+  | { kind: 'stream'; element: HTMLAudioElement; duration: number; label?: string; repeat?: number; level?: number }
   | { kind: 'silence'; seconds: number; label?: string };
 
 const TARGET_RMS = 0.08;
+const GATE_POWER = 0.0001; // about -40 dBFS: below this a window is a pause
+// The music fades out over this long after the last step ends.
+const MUSIC_FADE_SECONDS = 5;
 const MAX_BOOST = 4; // +12 dB
 
 // Decoded audio is raw samples in RAM: a 45 minute recording decodes to
@@ -34,19 +37,61 @@ const MAX_BOOST = 4; // +12 dB
 const STREAM_SEGMENT_SECONDS = 300;
 const DECODE_BUDGET_SECONDS = 600;
 
+// Loudness is measured over the speaking parts only: a recording with
+// long pauses would otherwise read as quiet and be boosted too hard.
+// The gain also never pushes the loudest sample past full scale.
 function measureGain(buffer: AudioBuffer): number {
-  let sum = 0;
-  let count = 0;
+  const win = Math.max(1, Math.round(buffer.sampleRate * 0.1));
+  let power = 0;
+  let windows = 0;
+  let peak = 0;
+  let allPower = 0;
+  let allWindows = 0;
   for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
     const data = buffer.getChannelData(ch);
-    for (let i = 0; i < data.length; i += 32) {
-      sum += data[i] * data[i];
-      count++;
+    for (let i = 0; i < data.length; i += win) {
+      const end = Math.min(data.length, i + win);
+      let sum = 0;
+      for (let j = i; j < end; j += 4) {
+        const v = data[j];
+        sum += v * v;
+        const a = v < 0 ? -v : v;
+        if (a > peak) peak = a;
+      }
+      const p = sum / Math.max(1, Math.ceil((end - i) / 4));
+      allPower += p;
+      allWindows++;
+      if (p > GATE_POWER) {
+        power += p;
+        windows++;
+      }
     }
   }
-  const rms = Math.sqrt(sum / Math.max(1, count));
+  const mean = windows ? power / windows : allPower / Math.max(1, allWindows);
+  const rms = Math.sqrt(mean);
   if (rms < 0.0005) return 1;
-  return Math.min(MAX_BOOST, TARGET_RMS / rms);
+  let gain = Math.min(MAX_BOOST, TARGET_RMS / rms);
+  if (peak > 0 && peak * gain > 0.98) gain = 0.98 / peak;
+  return gain;
+}
+
+/** Loudness of a long recording from two short samples (the start and the
+ * middle), never decoding the whole file. Null when a sample cannot be
+ * decoded; the step then simply plays unleveled. */
+async function estimateStreamGain(ctx: AudioContext, blob: Blob): Promise<number | null> {
+  const SAMPLE = 3 * 1024 * 1024;
+  const starts = blob.size > SAMPLE * 2 ? [0, Math.floor(blob.size / 2)] : [0];
+  const gains: number[] = [];
+  for (const s of starts) {
+    try {
+      const buf = await ctx.decodeAudioData(await blob.slice(s, s + SAMPLE).arrayBuffer());
+      gains.push(measureGain(buf));
+    } catch {
+      // A slice that does not start on a frame boundary may not decode.
+    }
+  }
+  if (!gains.length) return null;
+  return gains.reduce((a, b) => a + b, 0) / gains.length;
 }
 
 function segLength(seg: LoadedSegment): number {
@@ -169,7 +214,16 @@ export class MeditationEngine {
       }
       if (duration > 0) {
         document.body.appendChild(el);
-        this.loaded.push({ kind: 'stream', element: el, duration, label: seg.label, repeat: seg.repeat });
+        const level = await estimateStreamGain(ctx, asset.blob);
+        if (this.ctx !== ctx) return false;
+        this.loaded.push({
+          kind: 'stream',
+          element: el,
+          duration,
+          label: seg.label,
+          repeat: seg.repeat,
+          level: level ?? undefined,
+        });
       }
     }
     // Repeats: a decoded buffer is shared by every pass (it is read
@@ -193,6 +247,17 @@ export class MeditationEngine {
       }
       return out;
     });
+    // Level every step to the same loudness. Decoded steps carry a gain
+    // node and can be boosted; a streamed step is a plain media element
+    // and can only be turned down. When a streamed step needs a boost it
+    // cannot have, the other steps come down to meet it (never below
+    // about -9 dB) so the steps still sit together.
+    const streamNeed = Math.max(1, ...this.loaded.map((s) => (s.kind === 'stream' ? (s.level ?? 1) : 1)));
+    const scale = streamNeed > 1 ? Math.max(0.35, 1 / streamNeed) : 1;
+    for (const seg of this.loaded) {
+      if (seg.kind === 'audio') seg.gain *= scale;
+      else if (seg.kind === 'stream') seg.element.volume = Math.min(1, (seg.level ?? 1) * scale);
+    }
     if (this.ctx !== ctx) return false;
     this.contentTotal = this.loaded.reduce((s, seg) => s + segLength(seg), 0);
 
@@ -305,13 +370,21 @@ export class MeditationEngine {
         }
       }
       if (this.music && this.musicElement) {
-        const target = this.music.duck && voice ? this.music.volume * 0.3 : this.music.volume;
+        // After the last step the music fades to silence instead of
+        // cutting off with the session.
+        const contentEnd = this.startAtTime + (this.contentTotal - this.offsetBase);
+        const fade = t > contentEnd ? Math.max(0, 1 - (t - contentEnd) / MUSIC_FADE_SECONDS) : 1;
+        const target =
+          (this.music.duck && voice ? this.music.volume * 0.3 : this.music.volume) * fade;
         const current = this.musicElement.volume;
         const next = current + (target - current) * 0.35;
         this.musicElement.volume = Math.min(1, Math.max(0, Math.abs(next - target) < 0.01 ? target : next));
       }
       const endAt =
-        this.startAtTime + (this.contentTotal - this.offsetBase) + 0.3 + (this.music ? 1.5 : 0);
+        this.startAtTime +
+        (this.contentTotal - this.offsetBase) +
+        0.3 +
+        (this.music ? MUSIC_FADE_SECONDS + 0.5 : 0);
       if (t >= endAt) {
         this.onVoiceActive?.(false);
         this.onEnded?.();
