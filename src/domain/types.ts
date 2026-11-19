@@ -183,6 +183,9 @@ export type MeditationConfig = {
   musicVolume?: number;
   /** Music dips under voice segments when set; constant otherwise. */
   musicDuck?: boolean;
+  /** The preset this setup was last loaded from or saved to, so the
+   * preset sheet opens on it even after the steps are edited. */
+  presetId?: string;
 };
 
 /** A named copy of a meditation configuration. */

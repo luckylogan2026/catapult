@@ -101,6 +101,8 @@ export function MeditationPlayer({
     const key = configKey(config);
     return (presets ?? []).find((x) => configKey(x.config) === key) ?? null;
   }, [config, presets]);
+  // The preset the card came from, still known after its steps change.
+  const basePreset = activePreset ?? (presets ?? []).find((x) => x.id === config.presetId) ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -207,14 +209,23 @@ export function MeditationPlayer({
     const clean = name.trim();
     if (!clean) return;
     const copy: MeditationConfig = structuredClone(config);
+    delete copy.presetId;
+    const id =
+      (board?.meditationPresets ?? []).find((x) => x.name.toLowerCase() === clean.toLowerCase())?.id ??
+      crypto.randomUUID();
     mutate(
       (b: Board) => {
         const list = b.meditationPresets ?? [];
-        const existing = list.find((x) => x.name.toLowerCase() === clean.toLowerCase());
-        const next: MeditationPreset[] = existing
-          ? list.map((x) => (x.id === existing.id ? { ...x, name: clean, config: copy } : x))
-          : [...list, { id: crypto.randomUUID(), name: clean, config: copy }];
-        return { ...b, meditationPresets: next };
+        const next: MeditationPreset[] = list.some((x) => x.id === id)
+          ? list.map((x) => (x.id === id ? { ...x, name: clean, config: copy } : x))
+          : [...list, { id, name: clean, config: copy }];
+        return {
+          ...b,
+          meditationPresets: next,
+          pages: b.pages.map((p) =>
+            p.id === page.id && p.meditation ? { ...p, meditation: { ...p.meditation, presetId: id } } : p,
+          ),
+        };
       },
       { undoable: false },
     );
@@ -222,7 +233,9 @@ export function MeditationPlayer({
 
   const loadPreset = (preset: MeditationPreset) => {
     if (engineRef.current?.playing) stop();
-    save(structuredClone(preset.config));
+    const next = structuredClone(preset.config);
+    next.presetId = preset.id;
+    save(next);
   };
 
   const deletePreset = (id: string) => {
@@ -415,9 +428,10 @@ export function MeditationPlayer({
               >
                 {m.presets}
               </button>
-              {activePreset && (
+              {basePreset && (
                 <span className="min-w-0 grow truncate font-body text-[11px] text-white/80">
-                  {activePreset.name}
+                  {basePreset.name}
+                  {!activePreset && <span className="text-white/50"> {m.presetChanged}</span>}
                 </span>
               )}
               {planned.seconds > 0 && (
@@ -582,6 +596,8 @@ export function MeditationPlayer({
           {presetsOpen && (
             <PresetSheet
               presets={board.meditationPresets ?? []}
+              activeId={activePreset?.id ?? null}
+              baseId={basePreset?.id ?? null}
               onLoad={(pr) => {
                 loadPreset(pr);
                 setPresetsOpen(false);
@@ -623,25 +639,50 @@ export function MeditationPlayer({
   );
 }
 
-// Named meditation setups: tap one to load it onto this page, or name
-// the current arrangement and save it. Saving under an existing name
-// replaces that preset. Portaled like the slot sheet, for the same
-// reason: the deck's transformed screens would misplace a fixed sheet.
+// Named meditation setups. Picking a name in the list only selects it;
+// nothing changes until Load or Save is pressed, so a tap meant for
+// saving can never load a setup by accident. Portaled like the slot
+// sheet, for the same reason: the deck's transformed screens would
+// misplace a fixed sheet.
+const NEW_PRESET = '__new__';
+
 function PresetSheet({
   presets,
+  activeId,
+  baseId,
   onLoad,
   onSave,
   onDelete,
   onClose,
 }: {
   presets: MeditationPreset[];
+  activeId: string | null;
+  baseId: string | null;
   onLoad: (p: MeditationPreset) => void;
   onSave: (name: string) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
+  // Opens on the preset the card came from; with none, on a new one, so
+  // Save never lands on an unrelated preset by default.
+  const [selected, setSelected] = useState<string>(
+    baseId && presets.some((x) => x.id === baseId) ? baseId : NEW_PRESET,
+  );
+  const [listOpen, setListOpen] = useState(false);
   const [name, setName] = useState('');
-  const overwrites = presets.some((x) => x.name.toLowerCase() === name.trim().toLowerCase());
+  const chosen = presets.find((x) => x.id === selected) ?? null;
+  const isNew = !chosen;
+  const typedMatch = presets.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
+
+  const doSave = () => {
+    const target = chosen ? chosen.name : name.trim();
+    if (!target) return;
+    const replacing = chosen ?? typedMatch;
+    if (replacing && !window.confirm(m.presetReplaceConfirm.replace('{name}', replacing.name))) return;
+    onSave(target);
+    onClose();
+  };
+
   return createPortal(
     <div
       className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50"
@@ -667,73 +708,100 @@ function PresetSheet({
         <p className="px-1 pb-2 font-body text-[11px] uppercase tracking-wider text-white/50">
           {m.presetsTitle}
         </p>
-        {presets.length === 0 && (
-          <p className="px-1 pb-2 font-body text-xs text-white/60">{m.presetsEmpty}</p>
-        )}
-        {presets.map((pr) => (
-          <div key={pr.id} className="flex items-center gap-1">
+
+        <button
+          type="button"
+          aria-expanded={listOpen}
+          onClick={() => setListOpen((o) => !o)}
+          className="flex w-full items-center justify-between gap-2 rounded-md border border-white/20 bg-black/40 px-3 py-2.5 text-left font-body text-sm text-white hover:bg-white/10"
+        >
+          <span className="min-w-0 truncate">{chosen ? chosen.name : m.presetNew}</span>
+          <span className="shrink-0 text-xs text-white/60">{listOpen ? '▲' : '▼'}</span>
+        </button>
+        {listOpen && (
+          <div className="mt-1 max-h-60 overflow-y-auto rounded-md border border-white/15 bg-black/60 py-1">
+            {presets.map((pr) => (
+              <button
+                key={pr.id}
+                type="button"
+                onClick={() => {
+                  setSelected(pr.id);
+                  setListOpen(false);
+                }}
+                className={`flex w-full items-center justify-between px-3 py-2.5 text-left font-body text-sm hover:bg-white/10 ${
+                  pr.id === selected ? 'bg-primary/20 text-white' : 'text-white/85'
+                }`}
+              >
+                <span className="min-w-0 truncate">{pr.name}</span>
+                {pr.id === activeId && (
+                  <span className="shrink-0 pl-2 text-[10px] uppercase tracking-wider text-white/50">
+                    {m.presetOnCard}
+                  </span>
+                )}
+              </button>
+            ))}
             <button
               type="button"
-              onClick={() => onLoad(pr)}
-              className="min-w-0 grow truncate rounded-md px-3 py-2.5 text-left font-body text-sm text-white/90 hover:bg-white/10"
+              onClick={() => {
+                setSelected(NEW_PRESET);
+                setListOpen(false);
+              }}
+              className={`w-full px-3 py-2.5 text-left font-body text-sm hover:bg-white/10 ${
+                isNew ? 'bg-primary/20 text-white' : 'text-white/70'
+              }`}
             >
-              {pr.name}
+              {m.presetNew}
             </button>
+          </div>
+        )}
+
+        {isNew && (
+          <input
+            value={name}
+            onChange={(ev) => setName(ev.target.value)}
+            placeholder={m.presetNamePlaceholder}
+            className="mt-2 w-full rounded-md border border-white/20 bg-black/40 px-2.5 py-2 font-body text-sm text-white outline-none placeholder:text-white/30 focus:border-white/50"
+          />
+        )}
+
+        <p className="px-1 pt-2 font-body text-[11px] text-white/50">
+          {isNew ? m.presetHintNew : m.presetHintPicked}
+        </p>
+
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            disabled={!chosen}
+            onClick={() => {
+              if (chosen) onLoad(chosen);
+            }}
+            className="grow rounded-md border border-white/30 px-3 py-2.5 font-body text-sm font-medium text-white hover:bg-white/10 disabled:opacity-30"
+          >
+            {m.presetLoad}
+          </button>
+          <button
+            type="button"
+            disabled={isNew && !name.trim()}
+            onClick={doSave}
+            className="grow rounded-md bg-primary px-3 py-2.5 font-body text-sm font-medium text-background disabled:opacity-40"
+          >
+            {m.presetSave}
+          </button>
+          {chosen && (
             <button
               type="button"
               aria-label={m.presetDelete}
               onClick={() => {
-                if (window.confirm(m.presetDeleteConfirm.replace('{name}', pr.name))) onDelete(pr.id);
+                if (window.confirm(m.presetDeleteConfirm.replace('{name}', chosen.name))) {
+                  onDelete(chosen.id);
+                  setSelected(presets.find((x) => x.id !== chosen.id)?.id ?? NEW_PRESET);
+                }
               }}
-              className="h-9 w-9 shrink-0 rounded-md font-body text-sm text-white/50 hover:bg-white/10 hover:text-white"
+              className="shrink-0 rounded-md border border-white/15 px-3 py-2.5 font-body text-sm text-white/60 hover:bg-white/10 hover:text-white"
             >
-              ✕
+              {m.presetDeleteShort}
             </button>
-          </div>
-        ))}
-        <div className="mt-3 border-t border-white/10 pt-3">
-          <p className="px-1 pb-1.5 font-body text-[11px] text-white/50">{presets.length > 0 ? m.presetSaveHintPick : m.presetSaveHint}</p>
-          {presets.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {presets.map((pr) => {
-                const picked = pr.name.toLowerCase() === name.trim().toLowerCase();
-                return (
-                  <button
-                    key={pr.id}
-                    type="button"
-                    onClick={() => setName(pr.name)}
-                    className={`max-w-full truncate rounded-full border px-3 py-1 font-body text-xs ${
-                      picked
-                        ? 'border-primary bg-primary/20 text-white'
-                        : 'border-white/20 text-white/70 hover:text-white'
-                    }`}
-                  >
-                    {pr.name}
-                  </button>
-                );
-              })}
-            </div>
           )}
-          <div className="flex gap-2">
-            <input
-              value={name}
-              onChange={(ev) => setName(ev.target.value)}
-              placeholder={m.presetNamePlaceholder}
-              className="min-w-0 grow rounded-md border border-white/20 bg-black/40 px-2.5 py-2 font-body text-sm text-white outline-none placeholder:text-white/30 focus:border-white/50"
-            />
-            <button
-              type="button"
-              disabled={!name.trim()}
-              onClick={() => {
-                onSave(name);
-                setName('');
-                onClose();
-              }}
-              className="shrink-0 rounded-md bg-primary px-3 py-2 font-body text-sm font-medium text-background disabled:opacity-40"
-            >
-              {overwrites ? m.presetUpdate : m.presetSave}
-            </button>
-          </div>
         </div>
       </div>
     </div>,

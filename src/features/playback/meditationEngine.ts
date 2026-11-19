@@ -126,6 +126,8 @@ export class MeditationEngine {
   private offsetBase = 0;
   private contentTotal = 0;
   private lastVoiceState = false;
+  /** Music volume when the last step ended; the fade-out starts here. */
+  private fadeFrom: number | null = null;
 
   onEnded: (() => void) | null = null;
   onVoiceActive: ((active: boolean) => void) | null = null;
@@ -372,13 +374,21 @@ export class MeditationEngine {
       if (this.music && this.musicElement) {
         // After the last step the music fades to silence instead of
         // cutting off with the session.
+        // The fade starts from wherever the music sits when the last step
+        // ends, so a dipped bed under a closing voice fades down from the
+        // dip instead of swelling back up first.
         const contentEnd = this.startAtTime + (this.contentTotal - this.offsetBase);
-        const fade = t > contentEnd ? Math.max(0, 1 - (t - contentEnd) / MUSIC_FADE_SECONDS) : 1;
-        const target =
-          (this.music.duck && voice ? this.music.volume * 0.3 : this.music.volume) * fade;
-        const current = this.musicElement.volume;
-        const next = current + (target - current) * 0.35;
-        this.musicElement.volume = Math.min(1, Math.max(0, Math.abs(next - target) < 0.01 ? target : next));
+        if (t > contentEnd) {
+          if (this.fadeFrom === null) this.fadeFrom = this.musicElement.volume;
+          const left = Math.max(0, 1 - (t - contentEnd) / MUSIC_FADE_SECONDS);
+          this.musicElement.volume = Math.min(1, Math.max(0, this.fadeFrom * left));
+        } else {
+          this.fadeFrom = null;
+          const target = this.music.duck && voice ? this.music.volume * 0.3 : this.music.volume;
+          const current = this.musicElement.volume;
+          const next = current + (target - current) * 0.35;
+          this.musicElement.volume = Math.min(1, Math.max(0, Math.abs(next - target) < 0.01 ? target : next));
+        }
       }
       const endAt =
         this.startAtTime +

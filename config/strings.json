@@ -468,14 +468,18 @@
     "moveDown": "Move step down",
     "presets": "Presets",
     "presetsTitle": "Saved setups",
-    "presetsEmpty": "No saved setups yet. Name the current steps below to keep them.",
-    "presetSaveHint": "Save the current steps, music and volume as:",
     "presetNamePlaceholder": "Setup name",
     "presetSave": "Save",
-    "presetUpdate": "Update",
     "presetDelete": "Delete setup",
     "presetDeleteConfirm": "Delete the setup \"{name}\"?",
-    "presetSaveHintPick": "Save the current setup. Tap a name to replace it, or type a new one:"
+    "presetNew": "+ New preset",
+    "presetOnCard": "On card",
+    "presetLoad": "Load",
+    "presetDeleteShort": "Delete",
+    "presetHintPicked": "Load puts this preset on the card. Save replaces it with what is on the card now.",
+    "presetHintNew": "Name the setup on the card and press Save.",
+    "presetReplaceConfirm": "Replace the preset \"{name}\" with the setup on the card now?",
+    "presetChanged": "(changed)"
   },
   "tracker": {
     "positionOf": "{n} of {total}",
